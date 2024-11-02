@@ -54,6 +54,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Publish to crates.io
-        run: cargo publish
+        run: cargo publish -p bindgen_helpers
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
