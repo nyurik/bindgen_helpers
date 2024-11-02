@@ -1,0 +1,12 @@
+[package]
+name = "bindgen_helpers_tests"
+description = "Tests for bindgen_helpers, cleanly separated from the main crate to ensure no dependencies are leaked"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+version = "0.0.0"
+publish = false
+
+[dev-dependencies]
+bindgen.workspace = true
+bindgen_helpers = { path = ".." }
+insta.workspace = true

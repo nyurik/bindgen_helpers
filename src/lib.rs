@@ -3,7 +3,8 @@
 
 use std::collections::HashMap;
 
-use convert_case::{Case, Casing};
+pub use convert_case::Case;
+use convert_case::Casing as _;
 use regex::Regex;
 
 #[derive(Debug, Default)]
@@ -183,9 +184,9 @@ macro_rules! rename_enum {
             $crate::IdentRenamer {
                 $( rm_prefix: Some($rm_prefix.into()), )?
                 $( rm_suffix: Some($rm_suffix.into()), )?
-                $( case: Some(convert_case::Case::$case), )?
+                $( case: Some($crate::Case::$case), )?
                 renames: vec![$( ($itm.into(), $ren.into()), )*].into_iter().collect(),
-                ..$crate::IdentRenamer::default_case(convert_case::Case::Pascal)
+                ..$crate::IdentRenamer::default_case($crate::Case::Pascal)
             }
         );
     };

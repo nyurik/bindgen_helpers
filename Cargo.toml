@@ -1,3 +1,14 @@
+[workspace]
+resolver = "2"
+members = [".", "tests"]
+default-members = [".", "tests"]
+
+[workspace.dependencies]
+bindgen = "0.*"
+convert_case = "0.6.0"
+insta = "1.41.1"
+regex = "1.11.1"
+
 [package]
 name = "bindgen_helpers"
 version = "0.1.1"
@@ -11,16 +22,16 @@ categories = ["development-tools::ffi", "development-tools::build-utils"]
 rust-version = "1.81.0"
 
 [dependencies]
-bindgen = "0.*"
-convert_case = "0.6.0"
-regex = "1.11.1"
+bindgen.workspace = true
+convert_case.workspace = true
+regex.workspace = true
 
 [dev-dependencies]
-insta = "1.41.1"
+insta.workspace = true
 
-[lints.rust]
+[workspace.lints.rust]
 unsafe_code = "forbid"
 unused_qualifications = "warn"
 
-[lints.clippy]
+[workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
