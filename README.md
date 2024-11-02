@@ -48,7 +48,7 @@ enum my_enum {
 };
 
 "#)
-    // generated regex str includes all the renames, not just enums, but it's fine 
+    // note that generated regex str includes all the renames, not just enums
     .rustified_enum(renamer.get_regex_str())
     .parse_callbacks(Box::new(renamer))
     .generate().unwrap();
