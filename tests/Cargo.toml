@@ -10,3 +10,6 @@ publish = false
 bindgen.workspace = true
 bindgen_helpers = { path = ".." }
 insta.workspace = true
+
+[lints]
+workspace = true
