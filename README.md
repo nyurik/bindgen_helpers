@@ -11,6 +11,7 @@ Utilities to rename, change case, and fix Rust code generated from the C headers
 ## Usage
 
 ```rust
+// build.rs
 use bindgen::Builder;
 use bindgen_helpers::{rename_enum, Renamer};
 
