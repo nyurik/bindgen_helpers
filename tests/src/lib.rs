@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use bindgen::Builder;
 use bindgen_helpers::{rename_enum, Renamer};
 use insta::assert_snapshot;
