@@ -6,7 +6,9 @@
 [![crates.io license](https://img.shields.io/crates/l/bindgen_helpers)](https://github.com/nyurik/bindgen_helpers/blob/main/LICENSE-APACHE)
 [![CI build](https://github.com/nyurik/bindgen_helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/nyurik/bindgen_helpers/actions)
 
-Utilities to rename, change case, and fix Rust code generated from the C headers using bindgen.
+Utilities to rename, change case, and fix Rust code generated from the C headers using [bindgen](https://rust-lang.github.io/rust-bindgen/).
+`Renamer` implements a bindgen callback trait, and currently handles struct/enum/typedef type renames with a `string->string` hashmap.
+Additionally, it can rename the enum variant names by removing prefix / suffix, and change identifier case to `PascalCase` to be consistent with the Rust canonical style.
 
 ## Usage
 
