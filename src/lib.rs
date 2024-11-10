@@ -6,14 +6,13 @@ use std::collections::HashMap;
 pub use convert_case::Case;
 use convert_case::Casing as _;
 use regex::Regex;
+pub use regex::RegexSet;
 
 #[derive(Debug, Default)]
 pub struct IdentRenamer {
-    /// The prefix to remove from the value. Applied before any explicit renames.
-    pub rm_prefix: Option<String>,
-    /// The suffix to remove from the value. Applied before any explicit renames.
-    pub rm_suffix: Option<String>,
-    /// Explicit renames for some values without prefix. If set, skips automatic case change.
+    /// Any regexes to remove substrings from the value. Only first matching is applied. Applied before any explicit renames.
+    pub remove: Option<RegexSet>,
+    /// Additional explicit renames. If a match is found, skips automatic case change.
     pub renames: HashMap<String, String>,
     /// Which case to convert the value to, unless explicitly renamed.
     pub case: Option<Case>,
@@ -28,19 +27,22 @@ impl IdentRenamer {
         }
     }
 
-    fn apply(&self, mut val: &str) -> String {
-        if let Some(prefix) = &self.rm_prefix {
-            val = val.trim_start_matches(prefix);
+    fn apply(&self, val: &str) -> String {
+        let mut val = val.to_owned();
+        if let Some(remove) = &self.remove {
+            // remove first matching string from val
+            if let Some(idx) = remove.matches(val.as_ref()).iter().next() {
+                // expect regex to pass - it was already added to RegexSet
+                let re = Regex::new(&remove.patterns()[idx]).unwrap();
+                val = re.replace(&val, "").to_string();
+            }
         }
-        if let Some(suffix) = &self.rm_suffix {
-            val = val.trim_end_matches(suffix);
-        }
-        if let Some(new_val) = self.renames.get(val) {
+        if let Some(new_val) = self.renames.get(val.as_str()) {
             new_val.to_string()
         } else if let Some(case) = self.case {
             val.to_case(case)
         } else {
-            val.to_string()
+            val
         }
     }
 }
@@ -172,18 +174,24 @@ impl bindgen::callbacks::ParseCallbacks for Renamer {
 macro_rules! rename_enum {
     ( $cb:expr,
       $c_name:literal => $rust_name:literal
-      $(, prefix: $rm_prefix:literal)?
-      $(, suffix: $rm_suffix:literal)?
+      $(, remove: $remove:literal)*
       $(, case: $case:ident)?
       $(, $itm:literal => $ren:literal)*
       $(,)?
     ) => {
         $cb.rename_item($c_name, $rust_name);
+        #[allow(clippy::needless_update)]
         $cb.rename_enum_val(
             Some(concat!("enum ", $c_name)),
             $crate::IdentRenamer {
-                $( rm_prefix: Some($rm_prefix.into()), )?
-                $( rm_suffix: Some($rm_suffix.into()), )?
+                remove: {
+                    let patterns: Vec<&str> = vec![$($remove),*];
+                    if patterns.is_empty() {
+                        None
+                    } else {
+                        Some($crate::RegexSet::new(&patterns).expect("Unable to compile regex set for remove parameter"))
+                    }
+                },
                 $( case: Some($crate::Case::$case), )?
                 renames: vec![$( ($itm.into(), $ren.into()), )*].into_iter().collect(),
                 ..$crate::IdentRenamer::default_case($crate::Case::Pascal)

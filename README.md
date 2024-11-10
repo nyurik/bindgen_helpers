@@ -8,7 +8,7 @@
 
 Utilities to rename, change case, and fix Rust code generated from the C headers using [bindgen](https://rust-lang.github.io/rust-bindgen/).
 `Renamer` implements a bindgen callback trait, and currently handles struct/enum/typedef type renames with a `string->string` hashmap.
-Additionally, it can rename the enum variant names by removing prefix / suffix, and change identifier case to `PascalCase` to be consistent with the Rust canonical style.
+Additionally, it can rename the enum variant names by removing regex matches, and change identifier case to `PascalCase` to be consistent with the Rust canonical style.
 
 ## Usage
 
@@ -28,10 +28,10 @@ fn main() {
   rename_enum!(
     renamer,
     "my_enum" => "MyEnum", // rename the enum itself
-    prefix: "I_SAID_",     // optionally remove a prefix
-    suffix: "_ENUM",       // optionally remove a suffix
+    remove: "^I_SAID_",    // optionally any number of "remove" regexes
+    remove: "_ENUM$",
     case: Pascal,          // optionally set case convert, defaults to "PascalCase"
-    "MV_IT" => "Value1",   // rename a specific value after prefix/suffix removal
+    "MV_IT" => "Value1",   // rename a specific value after pattern removal
     "MV_IT2" => "Value2",  // more specific value renames
   );
 

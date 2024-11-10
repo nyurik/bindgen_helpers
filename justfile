@@ -70,4 +70,4 @@ check-if-published:
 
 # Run tests, and accept their results. Requires insta to be installed.
 bless:
-    cargo insta test --accept --unreferenced=delete
+    cargo insta test --accept --unreferenced=delete -p bindgen_helpers_tests
