@@ -12,10 +12,17 @@ Additionally, it can rename the enum variant names by removing regex matches, an
 
 ## Usage
 
+```toml
+# Cargo.toml
+[build-dependencies]
+# Bindgen_helpers re-exports all of bindgen's public API at the root level
+# Do not use bindgen directly to avoid some version conflicts
+bindgen_helpers = "0.3"
+```
+
 ```rust
 // build.rs
-use bindgen::Builder;
-use bindgen_helpers::{rename_enum, Renamer};
+use bindgen_helpers::{Builder, Renamer, rename_enum};
 
 fn main() {
   // true to enable debug output as warnings
