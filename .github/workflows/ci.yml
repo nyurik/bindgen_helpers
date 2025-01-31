@@ -9,6 +9,9 @@ on:
     types: [ published ]
   workflow_dispatch:
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   test:
     name: Test
@@ -43,7 +46,6 @@ jobs:
         with:
           toolchain: ${{ steps.metadata.outputs.rust-version }}
           components: rustfmt
-
       - run: just ci-test-msrv
 
   publish:

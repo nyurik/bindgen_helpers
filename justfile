@@ -32,7 +32,6 @@ docs:
 check:
     RUSTFLAGS='-D warnings' cargo check --workspace --all-targets
 
-
 # Run all tests
 test:
     RUSTFLAGS='-D warnings' cargo test --workspace --all-targets

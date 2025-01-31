@@ -123,8 +123,6 @@ See the list of all [case variants](https://docs.rs/convert_case/latest/convert_
   Install it with `cargo install just`.
 * To get a list of available commands, run `just`.
 * To run tests, use `just test`.
-* On `git push`, it will run a few validations, including `cargo fmt`, `cargo clippy`, and `cargo test`.
-  Use `git push --no-verify` to skip these checks.
 
 ## License
 
