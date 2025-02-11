@@ -27,10 +27,10 @@ use bindgen_helpers::{Builder, Renamer, rename_enum};
 fn main() {
   // true to enable debug output as warnings
   let mut renamer = Renamer::new(true);
-  
+
   // rename a single item, e.g. a struct, enum, or a typedef
   renamer.rename_item("my_struct", "MyStruct");
-  
+
   // rename an enum and its values
   rename_enum!(
     renamer,
@@ -88,7 +88,7 @@ pub enum MyEnum {
 <!-- This code would generate the actual test output, but it is not stable enough to always run
 
   // Output the generated code to a string.
-  // In real code, use .write_to_file("bindings.rs") 
+  // In real code, use .write_to_file("bindings.rs")
   let mut output = Vec::new();
   bindings.write(Box::new(&mut output)).unwrap();
   let output = String::from_utf8(output).unwrap();

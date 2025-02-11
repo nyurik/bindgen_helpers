@@ -45,6 +45,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ steps.metadata.outputs.rust-version }}
+          # rustfmt is used by the tests
           components: rustfmt
       - run: just ci-test-msrv
 
