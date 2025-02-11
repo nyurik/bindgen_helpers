@@ -19,7 +19,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 keywords = ["ffi", "bindgen", "rename", "case", "convert"]
 categories = ["development-tools::ffi", "development-tools::build-utils"]
-rust-version = "1.71.0"
+rust-version = "1.71"
 
 [dependencies]
 bindgen.workspace = true
