@@ -10,12 +10,12 @@ pub struct IdentRenamer {
     /// Additional explicit renames. If a match is found, skips automatic case change.
     pub renames: HashMap<String, String>,
     /// Which case to convert the value to, unless explicitly renamed.
-    pub case: Option<Case>,
+    pub case: Option<Case<'static>>,
 }
 
 impl IdentRenamer {
     #[must_use]
-    pub fn default_case(case: Case) -> Self {
+    pub fn default_case(case: Case<'static>) -> Self {
         Self {
             case: Some(case),
             ..Default::default()
