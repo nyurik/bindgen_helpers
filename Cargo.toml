@@ -5,7 +5,7 @@ default-members = [".", "tests"]
 
 [workspace.dependencies]
 bindgen = ">=0.70.0"
-convert_case = "0.7.1"
+convert_case = "0.8.0"
 insta = "1.41.1"
 regex = "1.11.1"
 
