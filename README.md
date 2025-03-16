@@ -5,6 +5,7 @@
 [![docs.rs](https://img.shields.io/docsrs/bindgen_helpers)](https://docs.rs/bindgen_helpers)
 [![license](https://img.shields.io/crates/l/bindgen_helpers)](https://github.com/nyurik/bindgen_helpers/blob/main/LICENSE-APACHE)
 [![CI build](https://github.com/nyurik/bindgen_helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/nyurik/bindgen_helpers/actions)
+[![Codecov](https://img.shields.io/codecov/c/github/nyurik/bindgen_helpers)](https://app.codecov.io/gh/nyurik/bindgen_helpers)
 
 Utilities to rename, change case, and fix Rust code generated from the C headers using [bindgen](https://rust-lang.github.io/rust-bindgen/).
 `Renamer` implements a bindgen callback trait, and currently handles struct/enum/typedef type renames with a `string->string` hashmap.
