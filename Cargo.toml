@@ -9,6 +9,13 @@ convert_case = "0.8.0"
 insta = "1.41.1"
 regex = "1.11.1"
 
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_qualifications = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+
 [package]
 name = "bindgen_helpers"
 version = "0.3.2"
@@ -29,9 +36,5 @@ regex.workspace = true
 [dev-dependencies]
 insta.workspace = true
 
-[workspace.lints.rust]
-unsafe_code = "forbid"
-unused_qualifications = "warn"
-
-[workspace.lints.clippy]
-pedantic = { level = "warn", priority = -1 }
+[lints]
+workspace = true
