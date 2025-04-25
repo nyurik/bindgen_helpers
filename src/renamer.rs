@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use convert_case::{Case, Casing as _};
-use regex::{Regex, RegexSet};
+use regex::Regex;
 
 #[derive(Debug, Default)]
 pub struct IdentRenamer {
-    /// Any regexes to remove substrings from the value. Only first matching is applied. Applied before any explicit renames.
-    pub remove: Option<RegexSet>,
-    /// Additional explicit renames. If a match is found, skips automatic case change.
+    /// Any regexes to remove substrings from the value. Applied in the given order before any explicit renaming.
+    pub remove: Option<Vec<Regex>>,
+    /// Explicit renaming once all matching strings are removed. If a match is found, skips automatic case change.
     pub renames: HashMap<String, String>,
     /// Which case to convert the value to, unless explicitly renamed.
     pub case: Option<Case<'static>>,
@@ -25,11 +25,8 @@ impl IdentRenamer {
     fn apply(&self, val: &str) -> String {
         let mut val = val.to_owned();
         if let Some(remove) = &self.remove {
-            // remove first matching string from val
-            if let Some(idx) = remove.matches(val.as_ref()).iter().next() {
-                // expect regex to pass - it was already added to RegexSet
-                let re = Regex::new(&remove.patterns()[idx]).unwrap();
-                val = re.replace(&val, "").to_string();
+            for re in remove {
+                val = re.replace(&val, "").into();
             }
         }
         if let Some(new_val) = self.renames.get(val.as_str()) {

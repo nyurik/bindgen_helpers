@@ -3,7 +3,7 @@
 
 pub use bindgen::*;
 pub use convert_case::Case;
-pub use regex::RegexSet;
+pub use regex::Regex;
 
 mod renamer;
 pub use renamer::*;
@@ -27,7 +27,12 @@ macro_rules! rename_enum {
                     if patterns.is_empty() {
                         None
                     } else {
-                        Some($crate::RegexSet::new(&patterns).expect("Unable to compile regex set for remove parameter"))
+                        Some(
+                            patterns
+                                .into_iter()
+                                .map(|v| $crate::Regex::new(v).expect("Invalid regex"))
+                                .collect()
+                        )
                     }
                 },
                 $( case: Some($crate::Case::$case), )?
