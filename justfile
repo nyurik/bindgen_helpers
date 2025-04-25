@@ -101,5 +101,4 @@ check-if-published:
 
 # Run tests, and accept their results. Requires insta to be installed.
 bless:
-    # TODO:  Add --unreferenced=delete once https://github.com/mitsuhiko/insta/issues/765 is fixed
-    cargo insta test --accept -p bindgen_helpers_tests
+    cargo insta test --accept --unreferenced=delete -p bindgen_helpers_tests

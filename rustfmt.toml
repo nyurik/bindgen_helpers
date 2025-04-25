@@ -1,3 +1,2 @@
 # Adding the same fmt options as in the bindgen itself to simplify copy/pasting
 max_width = 80
-binop_separator = "back"
