@@ -29,7 +29,7 @@ enum my_enum {
     ");
 
     let mut cb = Renamer::new(true);
-    rename_enum!(cb, "my_enum" => "MyEnum", remove: "^I_SAID_", remove: "DID_NOT_SAY" , remove: "IT$", remove: "^I_SAID_(RENAME_)?", "RENAME_IT" => "Renamed", "YES" => "Maybe");
+    rename_enum!(cb, "my_enum" => "MyEnum", remove: "^I_SAID_", remove: "DID_NOT" , remove: "_ANYTHING$", remove: "^I_SAID_(RENAME_)?", "RENAME_IT" => "Renamed", "YES" => "Maybe");
 
     assert_snapshot!(run(cb, header), @r"
     #[repr(u32)]
@@ -38,7 +38,7 @@ enum my_enum {
         Maybe = 0,
         No = 1,
         Renamed = 2,
-        IAnything = 3,
+        ISay = 3,
     }
     ");
 

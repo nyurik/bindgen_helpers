@@ -7,7 +7,6 @@ version = "0.0.0"
 publish = false
 
 [dev-dependencies]
-bindgen.workspace = true
 bindgen_helpers = { path = ".." }
 insta.workspace = true
 
