@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub use convert_case::Case;
 use convert_case::Casing as _;
-use regex::Regex;
+pub use regex::Regex;
 
 use crate::callbacks::{EnumVariantValue, ParseCallbacks};
 
@@ -186,7 +186,11 @@ impl Renamer {
     }
 
     /// Rename a single C item, e.g., a struct, enum, or a typedef.
-    pub fn rename_item(&mut self, c_name: impl AsRef<str>, rust_name: impl AsRef<str>) {
+    pub fn rename_item(
+        &mut self,
+        c_name: impl AsRef<str>,
+        rust_name: impl AsRef<str>,
+    ) {
         self.item_renames
             .insert(c_name.as_ref().into(), rust_name.as_ref().into());
     }
@@ -211,9 +215,14 @@ impl Renamer {
     ///
     /// # Panics
     /// Will panic if the `enum_c_name` is not a valid regex.
-    pub fn rename_enum_val(&mut self, enum_c_name: Option<&str>, val_renamer: IdentRenamer) {
+    pub fn rename_enum_val(
+        &mut self,
+        enum_c_name: Option<&str>,
+        val_renamer: IdentRenamer,
+    ) {
         self.enum_renames.push((
-            enum_c_name.map(|v| Regex::new(v).expect("Invalid enum_c_name regex")),
+            enum_c_name
+                .map(|v| Regex::new(v).expect("Invalid enum_c_name regex")),
             val_renamer,
         ));
     }

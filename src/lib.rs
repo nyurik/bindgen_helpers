@@ -31,7 +31,7 @@ macro_rules! rename_enum {
                         Some(
                             patterns
                                 .into_iter()
-                                .map(|v| $crate::Regex::new(v).expect("Invalid regex"))
+                                .map(|v| $crate::Regex::new(v).expect("Unable to compile regex for remove parameter"))
                                 .collect()
                         )
                     }
