@@ -8,6 +8,7 @@ pub use regex::Regex;
 mod renamer;
 pub use renamer::*;
 
+/// Macro to help define renaming rules for an enum and its values. See an example in the [`Renamer`] documentation.
 #[macro_export]
 macro_rules! rename_enum {
     ( $cb:expr,
