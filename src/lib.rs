@@ -8,7 +8,8 @@ pub use regex::Regex;
 mod renamer;
 pub use renamer::*;
 
-/// Macro to help define renaming rules for an enum and its values. See an example in the [`Renamer`] documentation.
+/// Macro to help define renaming rules for an enum and its values.
+/// See an example in the [`Renamer`] documentation.
 #[macro_export]
 macro_rules! rename_enum {
     ( $cb:expr,
@@ -21,7 +22,8 @@ macro_rules! rename_enum {
         $cb.rename_item($c_name, $rust_name);
         #[allow(clippy::needless_update)]
         $cb.rename_enum_val(
-            Some(concat!("enum ", $c_name)),
+            // See https://github.com/rust-lang/rust-bindgen/issues/3113#issuecomment-2844178132
+            Some(concat!("(enum )?", $c_name)),
             $crate::IdentRenamer {
                 remove: {
                     let patterns: Vec<&str> = vec![$($remove),*];
