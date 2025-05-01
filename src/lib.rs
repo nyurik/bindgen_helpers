@@ -23,7 +23,7 @@ macro_rules! rename_enum {
         #[allow(clippy::needless_update)]
         $cb.rename_enum_val(
             // See https://github.com/rust-lang/rust-bindgen/issues/3113#issuecomment-2844178132
-            Some(concat!("(enum )?", $c_name)),
+            Some(concat!("^(enum )?", $c_name, "$")),
             $crate::IdentRenamer {
                 remove: {
                     let patterns: Vec<&str> = vec![$($remove),*];

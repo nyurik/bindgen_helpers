@@ -80,3 +80,40 @@ typedef enum my_enum4a { foo4 } my_enum4b;
     pub use self::my_enum4a as my_enum4b;
     ");
 }
+
+#[test]
+fn test_substr() {
+    let mut cb = Renamer::new(true);
+    rename_enum!(cb, "my_enum" => "MyEnum", remove: "f");
+    rename_enum!(cb, "my_enum_foo" => "MyEnumFoo", remove: "oo");
+    rename_enum!(cb, "an_enum_foo" => "AnEnumFoo", remove: "oo");
+    rename_enum!(cb, "an_enum" => "AnEnum", remove: "f");
+
+    assert_snapshot!(test(cb, r"
+enum my_enum { foo1 };
+enum my_enum_foo { foo2 };
+typedef enum { foo3 } an_enum;
+typedef enum { foo4 } an_enum_foo;
+"), @r"
+    #[repr(u32)]
+    #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+    pub enum MyEnum {
+        Oo1 = 0,
+    }
+    #[repr(u32)]
+    #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+    pub enum MyEnumFoo {
+        F2 = 0,
+    }
+    #[repr(u32)]
+    #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+    pub enum AnEnum {
+        Oo3 = 0,
+    }
+    #[repr(u32)]
+    #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+    pub enum AnEnumFoo {
+        F4 = 0,
+    }
+    ");
+}
