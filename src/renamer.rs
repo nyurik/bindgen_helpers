@@ -154,8 +154,12 @@ pub struct Renamer {
     /// Rename C items like enums, structs, and aliases that match a regex and apply a renamer.
     /// The regex string must not contain '^' or '$' symbols.
     item_renames_ext: Vec<(Regex, IdentRenamer)>,
-    /// Matches C enum names (i.e. "enum foo").
+    /// Matches C enum names.
     /// Note that the regex might be None because the callback might also not have it for some enums.
+    ///
+    /// As of 1.71.1, bindgen reports `enum foo {...}` and `typedef enum {...} foo` differently.
+    /// In the first case, `enum_c_name` is "enum foo", and in the second it's just "foo".
+    /// See [issue](https://github.com/rust-lang/rust-bindgen/issues/3113#issuecomment-2844178132)
     enum_renames: Vec<(Option<Regex>, IdentRenamer)>,
 }
 
@@ -211,7 +215,10 @@ impl Renamer {
         self.item_renames_ext.push((c_name, renamer));
     }
 
-    /// Rename enum values. Make sure `enum_c_name` is in the form `enum some_enum_name`.
+    /// Rename enum values.
+    ///
+    /// `enum_c_name` should be set like this `Same("(enum )?some_name")`
+    /// due to [this issue](https://github.com/rust-lang/rust-bindgen/issues/3113#issuecomment-2844178132)
     ///
     /// # Panics
     /// Will panic if the `enum_c_name` is not a valid regex.
