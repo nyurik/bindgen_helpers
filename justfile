@@ -1,5 +1,7 @@
 #!/usr/bin/env just --justfile
 
+CRATE_NAME := "bindgen_helpers"
+
 @_default:
     just --list
 
@@ -26,8 +28,14 @@ msrv:
     cargo msrv find --write-msrv --ignore-lockfile
 
 # Get the minimum supported Rust version (MSRV) for the crate
-get-msrv CRATE_NAME="bindgen_helpers":
-    cargo metadata --format-version 1 | jq -r --arg CRATE_NAME {{quote(CRATE_NAME)}} '.packages | map(select(.name == $CRATE_NAME)) | first | .rust_version'
+get-msrv: (get-crate-field "rust_version" CRATE_NAME)
+
+# Get any package's field from the metadata
+get-crate-field field package=CRATE_NAME:
+    cargo metadata --format-version 1 | jq -r '.packages | map(select(.name == "{{package}}")) | first | .{{field}}'
+
+build:
+    cargo build --workspace --all-targets
 
 # Run cargo clippy to lint the code
 clippy:
@@ -69,7 +77,7 @@ ci-coverage: && \
 
 # Run all tests
 test:
-    RUSTFLAGS='-D warnings' cargo test --workspace --all-targets
+    RUSTFLAGS='-D warnings' cargo test --workspace --all-targets --all-features
 
 # Test documentation
 test-doc:
@@ -87,12 +95,24 @@ ci-test: rust-info test-fmt clippy check test test-doc
 # Run minimal subset of tests to ensure compatibility with MSRV
 ci-test-msrv: rust-info check test
 
+# Run integration tests and save its output as the new expected output
+bless *ARGS: (cargo-install "insta" "cargo-insta")
+    cargo insta test --accept --unreferenced=delete -p bindgen_helpers_tests {{ARGS}}
+
+# Check if a certain Cargo command is installed, and install it if needed
+[private]
+cargo-install $COMMAND $INSTALL_CMD="" *ARGS="":
+    @if ! command -v $COMMAND > /dev/null; then \
+        echo "$COMMAND could not be found. Installing it with    cargo install ${INSTALL_CMD:-$COMMAND} {{ARGS}}" ;\
+        cargo install ${INSTALL_CMD:-$COMMAND} {{ARGS}} ;\
+    fi
+
 # Verify that the current version of the crate is not the same as the one published on crates.io
 check-if-published:
     #!/usr/bin/env bash
-    LOCAL_VERSION="$(grep '^version =' Cargo.toml | sed -E 's/version = "([^"]*)".*/\1/')"
+    LOCAL_VERSION="$({{just_executable()}} get-crate-field version)"
     echo "Detected crate version:  $LOCAL_VERSION"
-    CRATE_NAME="$(grep '^name =' Cargo.toml | head -1 | sed -E 's/name = "(.*)"/\1/')"
+    CRATE_NAME="$({{just_executable()}} get-crate-field name)"
     echo "Detected crate name:     $CRATE_NAME"
     PUBLISHED_VERSION="$(cargo search ${CRATE_NAME} | grep "^${CRATE_NAME} =" | sed -E 's/.* = "(.*)".*/\1/')"
     echo "Published crate version: $PUBLISHED_VERSION"
@@ -102,7 +122,3 @@ check-if-published:
     else
         echo "The current crate version has not yet been published."
     fi
-
-# Run tests, and accept their results. Requires insta to be installed.
-bless:
-    cargo insta test --accept --unreferenced=delete -p bindgen_helpers_tests
