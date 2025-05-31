@@ -1,6 +1,6 @@
 #!/usr/bin/env just --justfile
 
-CRATE_NAME := 'bindgen_helpers'
+main_crate := 'bindgen_helpers'
 
 # if running in CI, treat warnings as errors by setting RUSTFLAGS and RUSTDOCFLAGS to '-D warnings' unless they are already set
 # Use `CI=true just ci-test` to run the same tests as in GitHub CI.
@@ -13,7 +13,7 @@ export RUST_BACKTRACE := env('RUST_BACKTRACE', if env('CI', '') == 'true' {'1'} 
     just --list
 
 # Run integration tests and save its output as the new expected output
-bless *args:  (cargo-install 'insta' 'cargo-insta')
+bless *args:  (cargo-install 'cargo-insta')
     cargo insta test --accept --unreferenced=delete -p bindgen_helpers_tests {{args}}
 
 # Build the project
@@ -25,7 +25,7 @@ check:
     cargo check --workspace --all-targets
 
 # Verify that the current version of the crate is not the same as the one published on crates.io
-check-if-published:
+check-if-published:  (assert 'jq')
     #!/usr/bin/env bash
     set -euo pipefail
     LOCAL_VERSION="$({{just_executable()}} get-crate-field version)"
@@ -101,11 +101,11 @@ fmt:
     fi
 
 # Get any package's field from the metadata
-get-crate-field field package=CRATE_NAME:
+get-crate-field field package=main_crate:
     cargo metadata --format-version 1 | jq -r '.packages | map(select(.name == "{{package}}")) | first | .{{field}}'
 
 # Get the minimum supported Rust version (MSRV) for the crate
-get-msrv:  (get-crate-field 'rust_version' CRATE_NAME)
+get-msrv:  (get-crate-field 'rust_version')
 
 # Find the minimum supported Rust version (MSRV) using cargo-msrv extension, and update Cargo.toml
 msrv:  (cargo-install 'cargo-msrv')
@@ -136,6 +136,14 @@ udeps:  (cargo-install 'cargo-udeps')
 update:
     cargo +nightly -Z unstable-options update --breaking
     cargo update
+
+# Ensure that a certain command is available
+[private]
+assert command:
+    @if ! type {{command}} > /dev/null; then \
+        echo "Command '{{command}}' could not be found. Please make sure it has been installed on your computer." ;\
+        exit 1 ;\
+    fi
 
 # Check if a certain Cargo command is installed, and install it if needed
 [private]
