@@ -67,8 +67,8 @@ clean:
     rm -f Cargo.lock
 
 # Run cargo clippy to lint the code
-clippy:
-    cargo clippy --workspace --all-targets
+clippy *args:
+    cargo clippy --workspace --all-targets {{args}}
 
 # Generate code coverage report. Will install `cargo llvm-cov` if missing.
 coverage *args='--no-clean --open':  (cargo-install 'cargo-llvm-cov')
