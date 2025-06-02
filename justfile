@@ -1,17 +1,18 @@
 #!/usr/bin/env just --justfile
 
 main_crate := 'bindgen_helpers'
+features_flag := '--all-features'
 
 # if running in CI, treat warnings as errors by setting RUSTFLAGS and RUSTDOCFLAGS to '-D warnings' unless they are already set
 # Use `CI=true just ci-test` to run the same tests as in GitHub CI.
 # Use `just env-info` to see the current values of RUSTFLAGS and RUSTDOCFLAGS
-ci_mode := if env('CI', '') != '' { '1' } else { '' }
+ci_mode := if env('CI', '') != '' {'1'} else {''}
 export RUSTFLAGS := env('RUSTFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
 export RUSTDOCFLAGS := env('RUSTDOCFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
 export RUST_BACKTRACE := env('RUST_BACKTRACE', if ci_mode == '1' {'1'} else {''})
 
 @_default:
-    just --list
+    {{just_executable()}} --list
 
 # Run integration tests and save its output as the new expected output
 bless *args:  (cargo-install 'cargo-insta')
@@ -19,14 +20,14 @@ bless *args:  (cargo-install 'cargo-insta')
 
 # Build the project
 build:
-    cargo build --workspace --all-targets
+    cargo build --workspace --all-targets {{features_flag}}
 
 # Quick compile without building a binary
 check:
-    cargo check --workspace --all-targets
+    cargo check --workspace --all-targets {{features_flag}}
 
 # Verify that the current version of the crate is not the same as the one published on crates.io
-check-if-published:  (assert 'jq')
+check-if-published:  (assert-cmd 'jq')
     #!/usr/bin/env bash
     set -euo pipefail
     LOCAL_VERSION="$({{just_executable()}} get-crate-field version)"
@@ -43,21 +44,13 @@ check-if-published:  (assert 'jq')
     fi
 
 # Generate code coverage report to upload to codecov.io
-ci-coverage: && \
+ci-coverage: env-info && \
             (coverage '--codecov --output-path target/llvm-cov/codecov.info')
     # ATTENTION: the full file path above is used in the CI workflow
     mkdir -p target/llvm-cov
 
 # Run all tests as expected by CI
-ci-test: env-info test-fmt clippy check test test-doc
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ -n "$(git status --untracked-files --porcelain)" ]; then
-      >&2 echo 'ERROR: git repo is no longer clean. Make sure compilation and tests artifacts are in the .gitignore, and no repo files are modified.'
-      >&2 echo '######### git status ##########'
-      git status
-      exit 1
-    fi
+ci-test: env-info test-fmt clippy check test test-doc && assert-git-is-clean
 
 # Run minimal subset of tests to ensure compatibility with MSRV
 ci-test-msrv: env-info check test
@@ -69,11 +62,11 @@ clean:
 
 # Run cargo clippy to lint the code
 clippy *args:
-    cargo clippy --workspace --all-targets {{args}}
+    cargo clippy --workspace --all-targets {{features_flag}} {{args}}
 
 # Generate code coverage report. Will install `cargo llvm-cov` if missing.
 coverage *args='--no-clean --open':  (cargo-install 'cargo-llvm-cov')
-    cargo llvm-cov --workspace --all-targets --all-features --include-build-script {{args}}
+    cargo llvm-cov --workspace --all-targets {{features_flag}} --include-build-script {{args}}
 
 # Build and open code documentation
 docs:
@@ -110,20 +103,20 @@ get-msrv:  (get-crate-field 'rust_version')
 
 # Find the minimum supported Rust version (MSRV) using cargo-msrv extension, and update Cargo.toml
 msrv:  (cargo-install 'cargo-msrv')
-    cargo msrv find --write-msrv --ignore-lockfile --all-features
+    cargo msrv find --write-msrv --ignore-lockfile {{features_flag}}
 
 # Check semver compatibility with prior published version. Install it with `cargo install cargo-semver-checks`
 semver *args:  (cargo-install 'cargo-semver-checks')
-    cargo semver-checks {{args}}
+    cargo semver-checks {{features_flag}} {{args}}
 
 # Run all tests
 test:
-    cargo test --workspace --all-targets --all-features
+    cargo test --workspace --all-targets {{features_flag}}
 
 # Test documentation
 test-doc:
-    cargo test --doc --all-features
-    cargo doc --all-features --no-deps
+    cargo test --doc {{features_flag}}
+    cargo doc {{features_flag}} --no-deps
 
 # Test code formatting
 test-fmt:
@@ -131,7 +124,7 @@ test-fmt:
 
 # Find unused dependencies. Install it with `cargo install cargo-udeps`
 udeps:  (cargo-install 'cargo-udeps')
-    cargo +nightly udeps --all-targets --workspace --all-features
+    cargo +nightly udeps --workspace --all-targets {{features_flag}}
 
 # Update all dependencies, including breaking changes. Requires nightly toolchain (install with `rustup install nightly`)
 update:
@@ -140,10 +133,20 @@ update:
 
 # Ensure that a certain command is available
 [private]
-assert command:
+assert-cmd command:
     @if ! type {{command}} > /dev/null; then \
         echo "Command '{{command}}' could not be found. Please make sure it has been installed on your computer." ;\
         exit 1 ;\
+    fi
+
+# Make sure the git repo has no uncommitted changes
+[private]
+assert-git-is-clean:
+    @if [ -n "$(git status --untracked-files --porcelain)" ]; then \
+      >&2 echo "ERROR: git repo is no longer clean. Make sure compilation and tests artifacts are in the .gitignore, and no repo files are modified." ;\
+      >&2 echo "######### git status ##########" ;\
+      git status ;\
+      exit 1 ;\
     fi
 
 # Check if a certain Cargo command is installed, and install it if needed
