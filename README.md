@@ -1,10 +1,10 @@
 # Rust bindgen helpers
 
-[![GitHub](https://img.shields.io/badge/github-nyurik/bindgen_helpers-8da0cb?logo=github)](https://github.com/nyurik/bindgen_helpers)
+[![GitHub repo](https://img.shields.io/badge/github-nyurik/bindgen_helpers-8da0cb?logo=github)](https://github.com/nyurik/bindgen_helpers)
 [![crates.io version](https://img.shields.io/crates/v/bindgen_helpers)](https://crates.io/crates/bindgen_helpers)
-[![docs.rs](https://img.shields.io/docsrs/bindgen_helpers)](https://docs.rs/bindgen_helpers)
-[![license](https://img.shields.io/crates/l/bindgen_helpers)](https://github.com/nyurik/bindgen_helpers/blob/main/LICENSE-APACHE)
-[![CI build](https://github.com/nyurik/bindgen_helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/nyurik/bindgen_helpers/actions)
+[![docs.rs status](https://img.shields.io/docsrs/bindgen_helpers)](https://docs.rs/bindgen_helpers)
+[![crates.io license](https://img.shields.io/crates/l/bindgen_helpers)](https://github.com/nyurik/bindgen_helpers/blob/main/LICENSE-APACHE)
+[![CI build status](https://github.com/nyurik/bindgen_helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/nyurik/bindgen_helpers/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/nyurik/bindgen_helpers)](https://app.codecov.io/gh/nyurik/bindgen_helpers)
 
 Utilities to rename, change case, and fix Rust code generated from the C headers using [bindgen](https://rust-lang.github.io/rust-bindgen/).
