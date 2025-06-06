@@ -52,10 +52,10 @@ struct my_struct {
 };
 
 enum my_enum {
-	I_SAID_YES_ENUM,
-	I_SAID_NO_ENUM,
-	I_SAID_MV_IT_ENUM,
-	I_SAID_MV_IT2_ENUM,
+    I_SAID_YES_ENUM,
+    I_SAID_NO_ENUM,
+    I_SAID_MV_IT_ENUM,
+    I_SAID_MV_IT2_ENUM,
 };
 
 "#)
