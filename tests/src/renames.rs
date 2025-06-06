@@ -7,10 +7,10 @@ use crate::test;
 fn test_renames() {
     let header = r"
 enum my_enum {
-	I_SAID_YES,
-	I_SAID_NO,
-	I_SAID_RENAME_IT,
-	I_DID_NOT_SAY_ANYTHING,
+    I_SAID_YES,
+    I_SAID_NO,
+    I_SAID_RENAME_IT,
+    I_DID_NOT_SAY_ANYTHING,
 };
 ";
 
