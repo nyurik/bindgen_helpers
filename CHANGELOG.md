@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5](https://github.com/nyurik/bindgen_helpers/compare/v0.4.4...v0.4.5) - 2025-06-08
+
+### Added
+
+- consolidate release CI, dedup release and PR ([#25](https://github.com/nyurik/bindgen_helpers/pull/25))
+
+### Other
+
+- use CI RELEASE_PLZ_TOKEN to release bins
+- use release-plz CI token
+- add download counter to readme
+
 ## [0.4.4](https://github.com/nyurik/bindgen_helpers/compare/v0.4.3...v0.4.4) - 2025-06-06
 
 - refactored CI, enabled release automation
