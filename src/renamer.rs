@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use bindgen::callbacks::ItemInfo;
 pub use convert_case::Case;
 use convert_case::Casing as _;
 pub use regex::Regex;
@@ -260,7 +260,8 @@ impl ParseCallbacks for Renamer {
             })
     }
 
-    fn item_name(&self, item_name: &str) -> Option<String> {
+    fn item_name(&self, item_name: ItemInfo<'_>) -> Option<String> {
+        let item_name = item_name.name;
         self.item_renames
             .get(item_name)
             .map(ToString::to_string)
