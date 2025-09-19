@@ -253,7 +253,7 @@ impl ParseCallbacks for Renamer {
             .next()
             .or_else(|| {
                 if self.debug {
-                    let name = enum_name.unwrap();
+                    let name = enum_name.unwrap_or_default();
                     println!("cargo::warning=Unrecognized enum variant {name} :: {value}");
                 }
                 None
