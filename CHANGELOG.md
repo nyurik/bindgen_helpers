@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/nyurik/bindgen_helpers/compare/v0.5.0...v0.5.1) - 2025-10-01
+
+### Other
+
+- use automatic crates.io token
+- add more linting
+- *(just)* minor justfile cleanup
+- *(ci)* improve cargo-install recipe
+- *(ci)* disable telemetry in workflow
+- improve get-create-field in justfile
+- Bump actions/checkout from 4 to 5 in the all-actions-version-updates group ([#31](https://github.com/nyurik/bindgen_helpers/pull/31))
+- *(ci)* format dependabot.yml
+- [pre-commit.ci] pre-commit autoupdate ([#28](https://github.com/nyurik/bindgen_helpers/pull/28))
+- *(ci)* do not fail ci on codecov
+- *(ci)* update ci
+- format Cargo.toml ([#29](https://github.com/nyurik/bindgen_helpers/pull/29))
+
 ## [0.4.6](https://github.com/nyurik/bindgen_helpers/compare/v0.4.5...v0.4.6) - 2025-06-11
 
 ### Other
