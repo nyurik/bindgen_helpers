@@ -35,7 +35,7 @@ impl IdentRenamer {
             }
         }
         if let Some(new_val) = self.renames.get(val.as_str()) {
-            new_val.to_string()
+            new_val.clone()
         } else if let Some(case) = self.case {
             val.to_case(case)
         } else {
