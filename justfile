@@ -1,6 +1,6 @@
 #!/usr/bin/env just --justfile
 
-# Define the name of the main crate based
+# Define the name of the main crate based on the directory name
 main_crate := file_name(justfile_directory())
 # How to call the current just executable. Note that just_executable() may have `\` in Windows paths, so we need to quote it.
 just := quote(just_executable())
@@ -40,7 +40,8 @@ ci-coverage: env-info && \
 ci-test: env-info test-fmt clippy check test test-doc && assert-git-is-clean
 
 # Run minimal subset of tests to ensure compatibility with MSRV
-ci-test-msrv: env-info check test
+ci-test-msrv: env-info
+    cargo check --all-features --package {{main_crate}}
 
 # Clean all build artifacts
 clean:
@@ -96,7 +97,7 @@ get-msrv package=main_crate:  (get-crate-field 'rust_version' package)
 
 # Find the minimum supported Rust version (MSRV) using cargo-msrv extension, and update Cargo.toml
 msrv:  (cargo-install 'cargo-msrv')
-    cargo msrv find --write-msrv --ignore-lockfile --all-features
+    cargo msrv find --write-msrv --ignore-lockfile -- {{just}} ci-test-msrv
 
 # Run cargo-release
 release *args='':  (cargo-install 'release-plz')
@@ -139,11 +140,11 @@ assert-cmd command:
 [private]
 assert-git-is-clean:
     @if [ -n "$(git status --untracked-files --porcelain)" ]; then \
-      >&2 echo "ERROR: git repo is no longer clean. Make sure compilation and tests artifacts are in the .gitignore, and no repo files are modified." ;\
-      >&2 echo "######### git status ##########" ;\
-      git status ;\
-      git --no-pager diff ;\
-      exit 1 ;\
+        >&2 echo "ERROR: git repo is no longer clean. Make sure compilation and tests artifacts are in the .gitignore, and no repo files are modified." ;\
+        >&2 echo "######### git status ##########" ;\
+        git status ;\
+        git --no-pager diff ;\
+        exit 1 ;\
     fi
 
 # Check if a certain Cargo command is installed, and install it if needed
