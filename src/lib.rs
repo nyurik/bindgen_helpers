@@ -12,12 +12,13 @@ pub use renamer::*;
 /// See an example in the [`Renamer`] documentation.
 #[macro_export]
 macro_rules! rename_enum {
-    ( $cb:expr,
-      $c_name:literal => $rust_name:literal
-      $(, remove: $remove:literal)*
-      $(, case: $case:ident)?
-      $(, $itm:literal => $ren:literal)*
-      $(,)?
+    (
+        $cb:expr,
+        $c_name:literal => $rust_name:literal
+        $(, remove: $remove:literal)*
+        $(, case: $case:ident)?
+        $(, $itm:literal => $ren:literal)*
+        $(,)?
     ) => {
         $cb.rename_item($c_name, $rust_name);
         #[allow(clippy::needless_update)]

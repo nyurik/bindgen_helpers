@@ -1,8 +1,9 @@
+use std::collections::HashMap;
+
 use bindgen::callbacks::ItemInfo;
 pub use convert_case::Case;
 use convert_case::Casing as _;
 pub use regex::Regex;
-use std::collections::HashMap;
 
 use crate::callbacks::{EnumVariantValue, ParseCallbacks};
 
