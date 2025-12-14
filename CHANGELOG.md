@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2](https://github.com/nyurik/bindgen_helpers/compare/v0.5.1...v0.5.2) - 2025-12-14
+
+### Other
+
+- add .editorconfig, minor cleanups ([#34](https://github.com/nyurik/bindgen_helpers/pull/34))
+- add .editorconfig
+- minor justfile adjustments
+- *(deps)* bump actions/checkout from 5 to 6 in the all-actions-version-updates group ([#33](https://github.com/nyurik/bindgen_helpers/pull/33))
+- address new clippy lints
+- minor justfile adjustments
+
 ## [0.5.1](https://github.com/nyurik/bindgen_helpers/compare/v0.5.0...v0.5.1) - 2025-10-01
 
 ### Other
