@@ -40,11 +40,16 @@ ci-test: env-info test-fmt clippy check test test-doc && assert-git-is-clean
 
 # Run minimal subset of tests to ensure compatibility with MSRV
 ci-test-msrv:
-    if [ ! -f Cargo.lock.bak ]; then  mv Cargo.lock Cargo.lock.bak ; fi
+    #!/usr/bin/env bash
+    set -euo pipefail
+    backup=''
+    trap 'rm -f Cargo.lock; if [ -n "$backup" ]; then mv "$backup" Cargo.lock; fi' EXIT
+    if [ -f Cargo.lock ]; then
+        backup="$(mktemp Cargo.lock.bak.XXXXXX)"
+        mv Cargo.lock "$backup"
+    fi
     cp Cargo.msrv.lock Cargo.lock
     {{just}} env-info check
-    rm Cargo.lock
-    mv Cargo.lock.bak Cargo.lock
 
 # Clean all build artifacts
 clean:

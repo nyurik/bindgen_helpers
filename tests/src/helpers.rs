@@ -42,8 +42,8 @@ fn test_helpers_define_enum_write() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Foo = ERR_FOO,
-        Bar = ERR_BAR,
+        Foo = (ERR_FOO as u32),
+        Bar = (ERR_BAR as u32),
     }
     ");
 }

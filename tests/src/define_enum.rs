@@ -21,8 +21,8 @@ fn test_define_enum_minimal() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        ErrFoo = ERR_FOO,
-        ErrBar = ERR_BAR,
+        ErrFoo = (ERR_FOO as u32),
+        ErrBar = (ERR_BAR as u32),
     }
     ");
 }
@@ -57,9 +57,9 @@ fn test_define_enum_min_max() {
     #[repr(i32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Low = ERR_LOW,
-        Mid = ERR_MID,
-        High = ERR_HIGH,
+        Low = (ERR_LOW as i32),
+        Mid = (ERR_MID as i32),
+        High = (ERR_HIGH as i32),
     }
     ");
 }
@@ -97,9 +97,9 @@ fn test_define_enum_all_options() {
     #[repr(u32)]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Serialize)]
     pub enum ErrorCode {
-        Foo = ERR_FOO,
-        Bar = ERR_BAR,
-        WouldBlock = ERR_WOULD_BLOCK,
+        Foo = (ERR_FOO as u32),
+        Bar = (ERR_BAR as u32),
+        WouldBlock = (ERR_WOULD_BLOCK as u32),
     }
     ");
 }
@@ -128,9 +128,9 @@ fn test_define_enum_sort_by_name() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Alpha = ERR_ALPHA,
-        Middle = ERR_MIDDLE,
-        Zulu = ERR_ZULU,
+        Alpha = (ERR_ALPHA as u32),
+        Middle = (ERR_MIDDLE as u32),
+        Zulu = (ERR_ZULU as u32),
     }
     ");
 }

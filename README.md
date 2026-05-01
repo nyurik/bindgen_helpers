@@ -112,8 +112,8 @@ pub const ERR_BAR: u32 = 2;
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum ErrorCode {
-  Foo = ERR_FOO,
-  Bar = ERR_BAR,
+  Foo = (ERR_FOO as u32),
+  Bar = (ERR_BAR as u32),
 }
 
 ```

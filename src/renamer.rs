@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use bindgen::callbacks::ItemInfo;
+use bindgen::callbacks::{EnumVariantValue, IntKind, ItemInfo, ParseCallbacks};
 pub use convert_case::Case;
 use convert_case::Casing as _;
 pub use regex::Regex;
 
-use crate::callbacks::{EnumVariantValue, IntKind, ParseCallbacks};
 use crate::DefineEnum;
 
 /// Define the rules how a C identifier should be renamed.

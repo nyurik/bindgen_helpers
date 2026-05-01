@@ -5,7 +5,7 @@ use crate::{IdentRenamer, Regex};
 /// Collect matching integer `#define` constants and render a Rust enum for them.
 ///
 /// Bindgen still emits the matched constants as usual. The rendered enum uses those
-/// constants as discriminants, e.g. `Foo = ERR_FOO`.
+/// constants as discriminants, e.g. `Foo = (ERR_FOO as u32)`.
 #[derive(Debug, Clone)]
 pub struct DefineEnum {
     enum_name: String,
@@ -114,8 +114,11 @@ impl DefineEnum {
             value,
         };
 
-        if let Ok(mut values) = self.values.lock() {
-            values.push(value);
+        match self.values.lock() {
+            Ok(mut values) => values.push(value),
+            Err(poisoned) => {
+                poisoned.into_inner().push(value);
+            }
         }
     }
 
@@ -133,10 +136,10 @@ impl DefineEnum {
     /// Returns an empty string if no matching constants were collected.
     #[must_use]
     pub fn render(&self) -> String {
-        let Ok(mut values) = self.values.lock() else {
-            return String::new();
+        let mut values = match self.values.lock() {
+            Ok(values) => values.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
         };
-        let mut values = std::mem::take(&mut *values);
         if values.is_empty() {
             return String::new();
         }
@@ -169,9 +172,11 @@ impl DefineEnum {
         for value in &values {
             output.push_str("    ");
             output.push_str(&value.variant_name);
-            output.push_str(" = ");
+            output.push_str(" = (");
             output.push_str(&value.const_name);
-            output.push_str(",\n");
+            output.push_str(" as ");
+            output.push_str(repr);
+            output.push_str("),\n");
         }
         output.push_str("}\n");
         output
@@ -193,5 +198,26 @@ fn repr_for_values(values: impl Iterator<Item = i64>) -> &'static str {
         "u64"
     } else {
         "u32"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Case;
+
+    #[test]
+    fn test_render_is_repeatable() {
+        let define_enum = DefineEnum::new(
+            "ErrorCode",
+            Regex::new("^ERR_").unwrap(),
+            IdentRenamer::default_case(Case::Pascal),
+        );
+        define_enum.record_matching_macro("ERR_FOO", 1);
+
+        let rendered = define_enum.render();
+
+        assert_eq!(define_enum.render(), rendered);
+        assert!(rendered.contains("ErrFoo = (ERR_FOO as u32),"));
     }
 }
