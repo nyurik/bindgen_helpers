@@ -134,3 +134,34 @@ fn test_define_enum_sort_by_name() {
     }
     ");
 }
+
+#[test]
+fn test_define_enum_sort_by_value_desc() {
+    let header = r"
+#define ERR_LOW 1
+#define ERR_HIGH 3
+#define ERR_MIDDLE 2
+";
+    let mut cb = Renamer::new(true);
+    define_enum!(
+        cb,
+        ErrorCode,
+        r"^ERR_",
+        sort: ValueDesc,
+        remove: "^ERR_",
+    );
+
+    assert_snapshot!(test_with_define_enums(&cb, header), @"
+    pub const ERR_LOW: u32 = 1;
+    pub const ERR_HIGH: u32 = 3;
+    pub const ERR_MIDDLE: u32 = 2;
+
+    #[repr(u32)]
+    #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+    pub enum ErrorCode {
+        High = (ERR_HIGH as u32),
+        Middle = (ERR_MIDDLE as u32),
+        Low = (ERR_LOW as u32),
+    }
+    ");
+}

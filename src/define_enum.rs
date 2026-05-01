@@ -27,6 +27,8 @@ pub enum DefineEnumSort {
     Name,
     /// Sort by the integer macro value.
     Value,
+    /// Sort by the integer macro value in reverse order.
+    ValueDesc,
 }
 
 #[derive(Debug, Clone)]
@@ -150,6 +152,9 @@ impl DefineEnum {
             }
             Some(DefineEnumSort::Value) => {
                 values.sort_by_key(|v| v.value);
+            }
+            Some(DefineEnumSort::ValueDesc) => {
+                values.sort_by(|a, b| b.value.cmp(&a.value));
             }
             None => {}
         }
