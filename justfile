@@ -13,6 +13,8 @@ ci_mode := if env('CI', '') != '' {'1'} else {''}
 export RUSTFLAGS := env('RUSTFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
 export RUSTDOCFLAGS := env('RUSTDOCFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
 export RUST_BACKTRACE := env('RUST_BACKTRACE', if ci_mode == '1' {'1'} else {'0'})
+# Cargo lock behavior - enabled in CI.
+locked := if env('CI', '') != '' {'--locked'} else {''}
 
 @_default:
     {{just}} --list
@@ -23,11 +25,11 @@ bless *args:  (cargo-install 'cargo-insta')
 
 # Build the project
 build:
-    cargo build --workspace --all-features --all-targets
+    cargo build {{locked}} --workspace --all-features --all-targets
 
 # Quick compile without building a binary
 check:
-    cargo check --workspace --all-features --all-targets
+    cargo check {{locked}} --workspace --all-features --all-targets
 
 # Generate code coverage report to upload to codecov.io
 ci-coverage: env-info && \
@@ -35,13 +37,33 @@ ci-coverage: env-info && \
     # ATTENTION: the full file path above is used in the CI workflow
     mkdir -p target/llvm-cov
 
-# Run all tests as expected by CI
-ci-test: env-info test-fmt clippy check test test-doc && assert-git-is-clean
+# Run all checks locally. Cargo.lock may be created or updated.
+local-test: env-info test-fmt clippy check test test-doc
 
-# Run minimal subset of tests to ensure compatibility with MSRV
+# Run all tests as expected by CI, restoring Cargo.lock afterwards.
+ci-test:
+    {{just}} _use_msrv {{just}} local-test
+    {{just}} assert-git-is-clean
+
+# Run minimal subset of tests to ensure compatibility with MSRV in CI.
+# Fails if Cargo.msrv.lock would change.
 ci-test-msrv:
+    {{just}} _use_msrv {{just}} env-info check _assert-msrv-lock
+    {{just}} assert-git-is-clean
+
+# Run MSRV check locally and copy resolved lockfile changes back to Cargo.msrv.lock.
+msrv-check:
+    {{just}} _use_msrv {{just}} check _save-msrv-lock
+
+# Run a command with Cargo.msrv.lock copied to Cargo.lock, then restore the original Cargo.lock.
+_use_msrv *args:
     #!/usr/bin/env bash
     set -euo pipefail
+    command=({{args}})
+    if [ ${#command[@]} -eq 0 ]; then
+        >&2 echo 'ERROR: _use_msrv requires a command to run'
+        exit 1
+    fi
     backup=''
     trap 'rm -f Cargo.lock; if [ -n "$backup" ]; then mv "$backup" Cargo.lock; fi' EXIT
     if [ -f Cargo.lock ]; then
@@ -49,7 +71,22 @@ ci-test-msrv:
         mv Cargo.lock "$backup"
     fi
     cp Cargo.msrv.lock Cargo.lock
-    {{just}} env-info check
+    "${command[@]}"
+
+# Check that Cargo.msrv.lock is identical to Cargo.lock, and fail if not.
+_assert-msrv-lock:
+    @if ! cmp -s Cargo.lock Cargo.msrv.lock; then \
+        >&2 echo 'ERROR: Cargo.msrv.lock is not up to date. Run `just msrv-check` locally.' ;\
+        diff -u Cargo.msrv.lock Cargo.lock || true ;\
+        exit 1 ;\
+    fi
+
+# Copy Cargo.lock to Cargo.msrv.lock if they differ. This is used to save changes to the lockfile caused by MSRV check.
+_save-msrv-lock:
+    @if ! cmp -s Cargo.lock Cargo.msrv.lock; then \
+        >&2 echo 'Updating Cargo.msrv.lock' ;\
+        cp Cargo.lock Cargo.msrv.lock ;\
+    fi
 
 # Clean all build artifacts
 clean:
@@ -58,7 +95,7 @@ clean:
 
 # Run cargo clippy to lint the code
 clippy *args:
-    cargo clippy --workspace --all-features --all-targets {{args}}
+    cargo clippy {{locked}} --workspace --all-features --all-targets {{args}}
 
 # Generate code coverage report. Will install `cargo llvm-cov` if missing.
 coverage *args='--no-clean --open':  (cargo-install 'cargo-llvm-cov')
@@ -66,7 +103,7 @@ coverage *args='--no-clean --open':  (cargo-install 'cargo-llvm-cov')
 
 # Build and open code documentation
 docs *args='--open':
-    DOCS_RS=1 cargo doc --no-deps {{args}} --workspace --all-features
+    DOCS_RS=1 cargo doc {{locked}} --no-deps {{args}} --workspace --all-features
 
 # Print environment info
 env-info:
@@ -129,8 +166,8 @@ semver *args:  (cargo-install 'cargo-semver-checks')
 
 # Run all unit and integration tests
 test:
-    cargo test --workspace --all-features --all-targets
-    cargo test --doc --workspace --all-features
+    cargo test {{locked}} --workspace --all-features --all-targets
+    cargo test {{locked}} --doc --workspace --all-features
 
 # Test documentation generation
 test-doc:  (docs '')

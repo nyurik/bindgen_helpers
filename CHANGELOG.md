@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/nyurik/bindgen_helpers/compare/v0.6.0...v0.6.1) - 2026-05-01
+
+### Other
+
+- add descending value sort option ([#39](https://github.com/nyurik/bindgen_helpers/pull/39))
+
+## [0.6.0](https://github.com/nyurik/bindgen_helpers/compare/v0.5.1...v0.6.0) - 2026-05-01
+
+### What's New
+- generate enums from C #define constants ([#38](https://github.com/nyurik/bindgen_helpers/pull/38))
+
+### Other
+- improvements to CI and linting
+
 ## [0.5.1](https://github.com/nyurik/bindgen_helpers/compare/v0.5.0...v0.5.1) - 2025-10-01
 
 ### Other
