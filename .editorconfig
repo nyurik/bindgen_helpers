@@ -16,3 +16,6 @@ indent_size = 2
 
 [LICENSE-*]
 indent_size = unset
+
+[*.lock]
+indent_size = unset

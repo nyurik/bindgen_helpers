@@ -1,7 +1,6 @@
 #!/usr/bin/env just --justfile
 
-# Define the name of the main crate based on the directory name
-main_crate := file_name(justfile_directory())
+main_crate := 'bindgen_helpers'
 # How to call the current just executable. Note that just_executable() may have `\` in Windows paths, so we need to quote it.
 just := quote(just_executable())
 # cargo-binstall needs a workaround due to caching when used in CI
@@ -40,8 +39,12 @@ ci-coverage: env-info && \
 ci-test: env-info test-fmt clippy check test test-doc && assert-git-is-clean
 
 # Run minimal subset of tests to ensure compatibility with MSRV
-ci-test-msrv: env-info
-    cargo check --all-features --package {{main_crate}}
+ci-test-msrv:
+    if [ ! -f Cargo.lock.bak ]; then  mv Cargo.lock Cargo.lock.bak ; fi
+    cp Cargo.msrv.lock Cargo.lock
+    {{just}} env-info check
+    rm Cargo.lock
+    mv Cargo.lock.bak Cargo.lock
 
 # Clean all build artifacts
 clean:
@@ -63,7 +66,7 @@ docs *args='--open':
 # Print environment info
 env-info:
     @echo "Running for '{{main_crate}}' crate {{if ci_mode == '1' {'in CI mode'} else {'in dev mode'} }} on {{os()}} / {{arch()}}"
-    @echo "PWD $(pwd)"
+    @echo "PWD {{justfile_directory()}}"
     {{just}} --version
     rustc --version
     cargo --version
@@ -97,7 +100,19 @@ get-msrv package=main_crate:  (get-crate-field 'rust_version' package)
 
 # Find the minimum supported Rust version (MSRV) using cargo-msrv extension, and update Cargo.toml
 msrv:  (cargo-install 'cargo-msrv')
-    cargo msrv find --write-msrv --ignore-lockfile -- {{just}} ci-test-msrv
+    cargo msrv find --write-msrv -- {{just}} ci-test-msrv
+
+# Initialize Cargo.lock file with minimal versions of dependencies.
+msrv-init:  (cargo-install 'cargo-minimal-versions')
+    rm -f Cargo.msrv.lock Cargo.lock
+    @if ! cargo minimal-versions check --workspace ; then \
+        echo "ERROR: Could not generate minimal Cargo.msrv.lock" ;\
+        echo "       fix the lock file with 'cargo update ... --precise ...'" ;\
+        echo "       make sure it passes 'just check' " ;\
+        echo "       once done, rename Cargo.lock to Cargo.msrv.lock" ;\
+        exit 1 ;\
+    fi
+    mv Cargo.lock Cargo.msrv.lock
 
 # Run cargo-release
 release *args='':  (cargo-install 'release-plz')
@@ -107,7 +122,7 @@ release *args='':  (cargo-install 'release-plz')
 semver *args:  (cargo-install 'cargo-semver-checks')
     cargo semver-checks --all-features {{args}}
 
-# Run all tests
+# Run all unit and integration tests
 test:
     cargo test --workspace --all-features --all-targets
     cargo test --doc --workspace --all-features
