@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/nyurik/bindgen_helpers/compare/v0.6.0...v0.7.0) - 2026-05-01
+
+### Fixed
+
+- fix clippy
+
+### Other
+
+- add descending value sort option ([#39](https://github.com/nyurik/bindgen_helpers/pull/39))
+- *(deps)* bump the all-actions-version-updates group across 1 directory with 2 updates ([#37](https://github.com/nyurik/bindgen_helpers/pull/37))
+
 ## [0.5.1](https://github.com/nyurik/bindgen_helpers/compare/v0.5.0...v0.5.1) - 2025-10-01
 
 ### Other
