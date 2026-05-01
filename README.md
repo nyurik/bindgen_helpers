@@ -8,9 +8,11 @@
 [![CI build status](https://github.com/nyurik/bindgen_helpers/actions/workflows/ci.yml/badge.svg)](https://github.com/nyurik/bindgen_helpers/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/nyurik/bindgen_helpers)](https://app.codecov.io/gh/nyurik/bindgen_helpers)
 
-Utilities to rename, change case, and fix Rust code generated from the C headers using [bindgen](https://rust-lang.github.io/rust-bindgen/).
-`Renamer` implements a bindgen callback trait, and currently handles struct/enum/typedef type renames with a `string->string` hashmap.
-Additionally, it can rename the enum variant names by removing regex matches, and change identifier case to `PascalCase` to be consistent with the Rust canonical style.
+Utilities for shaping Rust code generated from C headers with [bindgen](https://rust-lang.github.io/rust-bindgen/).
+This crate re-exports bindgen and adds a small wrapper for common cleanup tasks: renaming generated items, rustifying and renaming C enums, applying regex removals and case conversion to identifiers, and collecting matching integer `#define` constants into additional Rust enums.
+
+The lower-level `Renamer` type implements bindgen parse callbacks directly for existing bindgen-style build scripts.
+For new code, `BindingsBuilder` wraps an already configured bindgen `Builder`, installs the callbacks, runs generation, and writes the final bindings with any helper-generated enums appended.
 
 ## Usage
 
@@ -24,27 +26,10 @@ bindgen_helpers = "0.3"
 
 ```rust
 // build.rs
-use bindgen_helpers::{Builder, Renamer, rename_enum};
+use bindgen_helpers::{BindingsBuilder, Builder, define_enum, rename_enum};
 
 fn main() {
-  // true to enable debug output as warnings
-  let mut renamer = Renamer::new(true);
-
-  // rename a single item, e.g. a struct, enum, or a typedef
-  renamer.rename_item("my_struct", "MyStruct");
-
-  // rename an enum and its values
-  rename_enum!(
-    renamer,
-    "my_enum" => "MyEnum", // rename the enum itself
-    remove: "^I_SAID_",    // optionally any number of "remove" regexes
-    remove: "_ENUM$",
-    case: Pascal,          // optionally set case convert, defaults to "PascalCase"
-    "MV_IT" => "Value1",   // rename a specific value after pattern removal
-    "MV_IT2" => "Value2",  // more specific value renames
-  );
-
-  let bindings = Builder::default()
+  let builder = Builder::default()
     // in real code, use .header("path/to/header.h")
     .header_contents("test.h", r#"
 
@@ -59,11 +44,47 @@ enum my_enum {
     I_SAID_MV_IT2_ENUM,
 };
 
-"#)
-    // note that generated regex str includes all the renames, not just enums
-    .rustified_enum(renamer.get_regex_str())
-    .parse_callbacks(Box::new(renamer))
-    .generate().unwrap();
+#define ERR_FOO 1
+#define ERR_BAR 2
+
+"#);
+
+  // Wrap the builder with the helper to handle all additional functionality
+  // true to print debug info about the renames to stderr, false to be silent
+  let mut helpers = BindingsBuilder::new(builder, true);
+
+  // rename a single item, e.g. a struct, enum, or a typedef
+  helpers.rename_item("my_struct", "MyStruct");
+
+  // rename an enum and its values
+  rename_enum!(
+    helpers,
+    "my_enum" => "MyEnum", // rename the enum itself
+    remove: "^I_SAID_",    // optionally any number of "remove" regexes
+    remove: "_ENUM$",
+    case: Pascal,          // optionally set case convert, defaults to "PascalCase"
+    "MV_IT" => "Value1",   // rename a specific value after pattern removal
+    "MV_IT2" => "Value2",  // more specific value renames
+  );
+
+  // Collect matching #define constants into an additional Rust enum.
+  // Make sure parameters are given in this order. Skipping is ok.
+  define_enum!(
+    helpers,
+    ErrorCode,             // enum name
+    r"^ERR_",              // include matching integer defines
+    repr = u32,            // optionally override auto-computed repr type
+    min: 0,                // optionally include only values >= min
+    max: 999,              // optionally include only values <= max
+    exclude: "_PRIVATE$",  // optionally exclude matching defines
+    sort: Value,           // optionally sort by Name or Value
+    derive: [Debug, Copy, Clone, PartialEq, Eq],  // optionally override derives
+    remove: "^ERR_",       // optionally any number of "remove" regexes
+    case: Pascal,          // optionally set case convert, defaults to "PascalCase"
+    "FOOBAR" => "FooBar",  // rename specific values after pattern removal, e.g. to fix some special cases that don't follow the general pattern
+  );
+
+  let bindings = helpers.into_string().unwrap();
 }
 
 //
@@ -83,6 +104,16 @@ pub enum MyEnum {
   No = 1,
   Value1 = 2,
   Value2 = 3,
+}
+
+pub const ERR_FOO: u32 = 1;
+pub const ERR_BAR: u32 = 2;
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub enum ErrorCode {
+  Foo = (ERR_FOO as u32),
+  Bar = (ERR_BAR as u32),
 }
 
 ```
