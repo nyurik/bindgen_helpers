@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use bindgen::callbacks::ItemInfo;
+use bindgen::callbacks::{EnumVariantValue, IntKind, ItemInfo, ParseCallbacks};
 pub use convert_case::Case;
 use convert_case::Casing as _;
 pub use regex::Regex;
 
-use crate::callbacks::{EnumVariantValue, ParseCallbacks};
+use crate::DefineEnum;
 
 /// Define the rules how a C identifier should be renamed.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct IdentRenamer {
     /// Any regexes to remove substrings from the value. Applied in the given order before any explicit renaming.
     pub remove: Option<Vec<Regex>>,
@@ -28,7 +28,7 @@ impl IdentRenamer {
         }
     }
 
-    fn apply(&self, val: &str) -> String {
+    pub(crate) fn apply(&self, val: &str) -> String {
         let mut val = val.to_owned();
         if let Some(remove) = &self.remove {
             for re in remove {
@@ -146,7 +146,7 @@ impl IdentRenamer {
 /// }
 /// "##);
 /// -->
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Renamer {
     /// Enable debug output
     debug: bool,
@@ -162,6 +162,8 @@ pub struct Renamer {
     /// In the first case, `enum_c_name` is "enum foo", and in the second it's just "foo".
     /// See [issue](https://github.com/rust-lang/rust-bindgen/issues/3113#issuecomment-2844178132)
     enum_renames: Vec<(Option<Regex>, IdentRenamer)>,
+    /// Rust enums generated from matching integer `#define` constants.
+    define_enums: Vec<DefineEnum>,
 }
 
 impl Renamer {
@@ -234,9 +236,34 @@ impl Renamer {
             val_renamer,
         ));
     }
+
+    /// Collect matching integer `#define` constants into a Rust enum.
+    pub fn define_enum(&mut self, define_enum: DefineEnum) {
+        self.define_enums.push(define_enum);
+    }
+
+    /// Render all collected define-backed Rust enums.
+    ///
+    /// This should be called after bindgen has generated bindings. Clone the
+    /// `Renamer` before passing it to `parse_callbacks` so this instance can
+    /// still see the collected state.
+    #[must_use]
+    pub fn render_define_enums(&self) -> String {
+        self.define_enums
+            .iter()
+            .map(DefineEnum::render)
+            .collect::<String>()
+    }
 }
 
 impl ParseCallbacks for Renamer {
+    fn int_macro(&self, name: &str, value: i64) -> Option<IntKind> {
+        for define_enum in &self.define_enums {
+            define_enum.record_matching_macro(name, value);
+        }
+        None
+    }
+
     fn enum_variant_name(
         &self,
         enum_name: Option<&str>,
