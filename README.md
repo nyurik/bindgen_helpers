@@ -77,7 +77,7 @@ enum my_enum {
     min: 0,                // optionally include only values >= min
     max: 999,              // optionally include only values <= max
     exclude: "_PRIVATE$",  // optionally exclude matching defines
-    sort: Value,           // optionally sort by Name or Value
+    sort: Value,           // optionally sort by Name, Value, or ValueDesc
     derive: [Debug, Copy, Clone, PartialEq, Eq],  // optionally override derives
     remove: "^ERR_",       // optionally any number of "remove" regexes
     case: Pascal,          // optionally set case convert, defaults to "PascalCase"
