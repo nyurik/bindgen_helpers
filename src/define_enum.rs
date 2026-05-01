@@ -22,6 +22,7 @@ pub struct DefineEnum {
 
 /// Sort order for define-backed enum variants.
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum DefineEnumSort {
     /// Sort by the rendered Rust variant name.
     Name,
@@ -154,7 +155,7 @@ impl DefineEnum {
                 values.sort_by_key(|v| v.value);
             }
             Some(DefineEnumSort::ValueDesc) => {
-                values.sort_by(|a, b| b.value.cmp(&a.value));
+                values.sort_by_key(|b| std::cmp::Reverse(b.value));
             }
             None => {}
         }
