@@ -3,6 +3,7 @@
 use bindgen_helpers::{BindingsBuilder, Builder, Renamer};
 
 mod c_enum;
+mod cli;
 mod define_enum;
 mod helpers;
 mod renames;

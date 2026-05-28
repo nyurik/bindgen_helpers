@@ -14,6 +14,9 @@ pub use define_enum::*;
 mod helpers;
 pub use helpers::*;
 
+mod config;
+pub use config::*;
+
 /// Macro to help define renaming rules for an enum and its values.
 /// See an example in the [`BindingsBuilder`] documentation.
 #[macro_export]

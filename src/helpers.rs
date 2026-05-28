@@ -2,7 +2,10 @@ use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::path::Path;
 
-use crate::{BindgenError, Builder, DefineEnum, IdentRenamer, Regex, Renamer};
+use crate::{
+    BindgenError, Builder, DefineEnum, HelperConfig, HelperConfigError,
+    IdentRenamer, Regex, Renamer,
+};
 
 /// High-level bindgen helper that owns a configured bindgen [`Builder`].
 ///
@@ -48,6 +51,54 @@ impl BindingsBuilder {
             builder,
             renamer: Renamer::new(debug),
         }
+    }
+
+    /// Create helpers from an already configured bindgen [`Builder`] and helper
+    /// config.
+    ///
+    /// # Errors
+    /// Returns an error if any helper config rule is invalid.
+    pub fn with_config(
+        builder: Builder,
+        config: &HelperConfig,
+    ) -> Result<Self, HelperConfigError> {
+        let mut helpers = Self::new(builder, config.debug);
+        helpers.apply_config(config)?;
+        Ok(helpers)
+    }
+
+    /// Create helpers from an already configured bindgen [`Builder`] and a TOML
+    /// helper config file.
+    ///
+    /// # Errors
+    /// Returns an error if the helper config cannot be read, parsed, or applied.
+    pub fn with_config_file(
+        builder: Builder,
+        path: impl AsRef<Path>,
+    ) -> Result<Self, HelperConfigError> {
+        Self::with_config(builder, &HelperConfig::from_path(path)?)
+    }
+
+    /// Apply helper config rules to this builder.
+    ///
+    /// # Errors
+    /// Returns an error if any helper config rule is invalid.
+    pub fn apply_config(
+        &mut self,
+        config: &HelperConfig,
+    ) -> Result<(), HelperConfigError> {
+        config.apply_to(self)
+    }
+
+    /// Load and apply helper config rules from a TOML file.
+    ///
+    /// # Errors
+    /// Returns an error if the helper config cannot be read, parsed, or applied.
+    pub fn apply_config_file(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> Result<(), HelperConfigError> {
+        self.apply_config(&HelperConfig::from_path(path)?)
     }
 
     /// Rename a single C item, e.g., a struct, enum, or a typedef.

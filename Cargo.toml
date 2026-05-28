@@ -11,10 +11,12 @@ categories = ["development-tools::ffi", "development-tools::build-utils"]
 rust-version = "1.71"
 
 [dependencies]
-bindgen.workspace = true
+bindgen = { workspace = true, features = ["__cli", "experimental", "prettyplease"] }
 convert_case.workspace = true
 regex.workspace = true
+serde.workspace = true
 thiserror.workspace = true
+toml.workspace = true
 
 [lints]
 workspace = true
@@ -29,7 +31,9 @@ bindgen = ">=0.72.0"
 convert_case = "0.11.0"
 insta = "1.43.1"
 regex = "1.11.1"
+serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
+toml = "1.1.2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
