@@ -11,7 +11,7 @@ categories = ["development-tools::ffi", "development-tools::build-utils"]
 rust-version = "1.71"
 
 [dependencies]
-bindgen = { workspace = true, features = ["__cli", "experimental", "prettyplease"] }
+bindgen.workspace = true
 convert_case.workspace = true
 regex.workspace = true
 serde.workspace = true
@@ -23,8 +23,8 @@ workspace = true
 
 [workspace]
 resolver = "2"
-members = [".", "tests"]
-default-members = [".", "tests"]
+members = [".", "cli", "tests"]
+default-members = [".", "cli", "tests"]
 
 [workspace.dependencies]
 bindgen = ">=0.72.0"

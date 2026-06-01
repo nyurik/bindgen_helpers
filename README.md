@@ -179,11 +179,19 @@ Use normal bindgen `Builder` methods for bindgen behavior such as headers, allow
 
 ## CLI usage
 
-The package also provides a `bindgen-helper` executable. It accepts the same arguments as the upstream `bindgen` CLI and adds one helper-specific option:
+The separate `bindgen_helpers_cli` package provides a `bindgen-helper` executable. It accepts the same arguments as the upstream `bindgen` CLI and adds one helper-specific option:
 
 ```sh
-cargo install bindgen_helpers
+cargo binstall bindgen_helpers_cli
+```
 
+Or build it from source with Cargo:
+
+```sh
+cargo install bindgen_helpers_cli
+```
+
+```sh
 bindgen-helper wrapper.h \
   -o src/bindings.rs \
   --helper-config bindgen-helper.toml \

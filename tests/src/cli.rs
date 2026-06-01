@@ -19,7 +19,7 @@ fn bindgen_helper() -> Command {
         "run",
         "--quiet",
         "-p",
-        "bindgen_helpers",
+        "bindgen_helpers_cli",
         "--bin",
         "bindgen-helper",
     ]);

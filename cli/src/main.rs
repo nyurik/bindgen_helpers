@@ -67,7 +67,7 @@ fn extract_helper_config(
                 set_helper_config(&mut helper_config, value)?;
                 continue;
             }
-            if let Some(value) = remainder.strip_prefix("=") {
+            if let Some(value) = remainder.strip_prefix('=') {
                 set_helper_config(&mut helper_config, OsString::from(value))?;
                 continue;
             }
@@ -104,7 +104,7 @@ enum CliError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error(transparent)]
-    Bindgen(#[from] bindgen_helpers::BindgenError),
+    Bindgen(#[from] bindgen::BindgenError),
     #[error(transparent)]
     HelperConfig(#[from] bindgen_helpers::HelperConfigError),
     #[error(transparent)]
