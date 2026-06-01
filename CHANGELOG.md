@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/nyurik/bindgen_helpers/compare/v0.6.1...v0.6.2) - 2026-06-01
+
+### Other
+
+- update dependencies ([#43](https://github.com/nyurik/bindgen_helpers/pull/43))
+
 ## [0.6.1](https://github.com/nyurik/bindgen_helpers/compare/v0.6.0...v0.6.1) - 2026-05-01
 
 ### Other
