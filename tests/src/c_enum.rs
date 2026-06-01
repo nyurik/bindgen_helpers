@@ -45,7 +45,7 @@ typedef enum my_enum4a { foo4 } my_enum4b;
 #[test]
 fn test_remove_to_reserved() {
     let mut cb = Renamer::new(true);
-    rename_enum!(cb, "my_fn_enum" => "MyFn", remove: "foo", case: Lower);
+    rename_enum!(cb, "my_fn_enum" => "MyFn", remove: "foo_", case: Lower);
 
     assert_snapshot!(test(cb, r"
 typedef enum { foo_fn } my_fn_enum;

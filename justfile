@@ -48,7 +48,7 @@ ci-test:
 # Run minimal subset of tests to ensure compatibility with MSRV in CI.
 # Fails if Cargo.msrv.lock would change.
 ci-test-msrv:
-    {{just}} _use_msrv {{just}} env-info check _assert-msrv-lock
+    RUSTUP_TOOLCHAIN="$({{just}} get-msrv)" {{just}} _use_msrv {{just}} env-info check _assert-msrv-lock
     {{just}} assert-git-is-clean
 
 # Run MSRV check locally and copy resolved lockfile changes back to Cargo.msrv.lock.
