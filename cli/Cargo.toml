@@ -1,15 +1,15 @@
 [package]
 name = "bindgen_helpers_cli"
-version = "0.6.1"
 description = "Command-line interface for bindgen_helpers"
-authors = ["Yuri Astrakhan <YuriAstrakhan@gmail.com>"]
-repository = "https://github.com/nyurik/bindgen_helpers"
 readme = "../README.md"
-edition = "2021"
-license = "MIT OR Apache-2.0"
 keywords = ["ffi", "bindgen", "rename", "case", "convert"]
 categories = ["development-tools::ffi", "development-tools::build-utils"]
-rust-version = "1.71"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [[bin]]
 name = "bindgen-helper"
@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 bindgen = { workspace = true, features = ["__cli", "experimental", "prettyplease"] }
-bindgen_helpers = { path = "..", version = "0.6.1" }
+bindgen_helpers.workspace = true
 thiserror.workspace = true
 
 [lints]

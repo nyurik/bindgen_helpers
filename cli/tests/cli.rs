@@ -15,14 +15,7 @@ fn write_temp(name: &str, content: &str) -> PathBuf {
 
 fn bindgen_helper() -> Command {
     let mut command = Command::new(env!("CARGO"));
-    command.args([
-        "run",
-        "--quiet",
-        "-p",
-        "bindgen_helpers_cli",
-        "--bin",
-        "bindgen-helper",
-    ]);
+    command.args(["run", "--quiet", "--bin", "bindgen-helper"]);
     command
 }
 
