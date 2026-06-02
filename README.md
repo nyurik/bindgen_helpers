@@ -253,6 +253,7 @@ For enum variants and define-backed enum variants, `case` defaults to `Pascal` t
   Install it with `cargo install just`.
 * To get a list of available commands, run `just`.
 * To run tests, use `just test`.
+* When updating dependencies, make sure to run `just msrv-check` to update `Cargo.msrv.lock` with the minimum supported Rust version that works with the new dependencies.
 
 ## License
 
