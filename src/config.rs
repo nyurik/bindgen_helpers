@@ -124,7 +124,7 @@ pub struct IdentRenamerConfig {
 #[non_exhaustive]
 pub enum HelperConfigError {
     /// Reading the TOML file failed.
-    #[error("failed to read helper config `{path}`")]
+    #[error("failed to read helper config `{path}`: {source}")]
     Read {
         /// Path that failed to read.
         path: String,
@@ -133,7 +133,7 @@ pub enum HelperConfigError {
         source: std::io::Error,
     },
     /// Parsing TOML failed.
-    #[error("failed to parse helper config `{path}`")]
+    #[error("failed to parse helper config `{path}`: {source}")]
     Parse {
         /// Path that failed to parse.
         path: String,
@@ -142,7 +142,7 @@ pub enum HelperConfigError {
         source: toml::de::Error,
     },
     /// A regex field could not be compiled.
-    #[error("invalid regex in `{field}`: `{value}`")]
+    #[error("invalid regex in `{field}`: `{value}`: {source}")]
     Regex {
         /// Config field name.
         field: &'static str,
@@ -205,7 +205,9 @@ impl HelperConfig {
             }
             helpers.rename_many(
                 regex("rename_many.match", &rename.matcher)?,
-                rename.renamer.to_ident_renamer(None)?,
+                rename
+                    .renamer
+                    .to_ident_renamer("rename_many.remove", None)?,
             );
         }
 
@@ -214,7 +216,10 @@ impl HelperConfig {
             let enum_match = format!("^(enum )?{}$", rename.c);
             helpers.rename_enum_val(
                 Some(&enum_match),
-                rename.renamer.to_ident_renamer(Some(Case::Pascal))?,
+                rename.renamer.to_ident_renamer(
+                    "rename_enum.remove",
+                    Some(Case::Pascal),
+                )?,
             );
         }
 
@@ -224,7 +229,10 @@ impl HelperConfig {
             }
             helpers.rename_enum_val(
                 rename.enum_match.as_deref(),
-                rename.renamer.to_ident_renamer(Some(Case::Pascal))?,
+                rename.renamer.to_ident_renamer(
+                    "rename_enum_value.remove",
+                    Some(Case::Pascal),
+                )?,
             );
         }
 
@@ -232,7 +240,10 @@ impl HelperConfig {
             let mut define_enum = DefineEnum::new(
                 &define.name,
                 regex("define_enum.match", &define.matcher)?,
-                define.renamer.to_ident_renamer(Some(Case::Pascal))?,
+                define.renamer.to_ident_renamer(
+                    "define_enum.remove",
+                    Some(Case::Pascal),
+                )?,
             );
             if let Some(repr) = &define.repr {
                 define_enum = define_enum.with_repr(repr);
@@ -263,12 +274,13 @@ impl HelperConfig {
 impl IdentRenamerConfig {
     fn to_ident_renamer(
         &self,
+        remove_field: &'static str,
         default_case: Option<Case<'static>>,
     ) -> Result<IdentRenamer, HelperConfigError> {
         let remove = self
             .remove
             .iter()
-            .map(|value| regex("remove", value))
+            .map(|value| regex(remove_field, value))
             .collect::<Result<Vec<_>, _>>()?;
         let case = match &self.case {
             Some(case) => parse_case_setting(case)?,
@@ -443,11 +455,31 @@ enum_match = "["
             case: Some("none".to_owned()),
             ..IdentRenamerConfig::default()
         }
-        .to_ident_renamer(Some(Case::Pascal))
+        .to_ident_renamer("rename_enum.remove", Some(Case::Pascal))
         .unwrap();
 
         assert!(renamer.remove.is_none());
         assert!(renamer.case.is_none());
+    }
+
+    #[test]
+    fn invalid_remove_regex_reports_specific_field() {
+        let config: HelperConfig = toml::from_str(
+            r#"
+[[define_enum]]
+name = "ErrorCode"
+match = "^ERR_"
+remove = ["["]
+"#,
+        )
+        .unwrap();
+        let mut helpers =
+            BindingsBuilder::new(bindgen::Builder::default(), false);
+
+        assert!(matches!(
+            config.apply_to(&mut helpers),
+            Err(HelperConfigError::Regex { field: "define_enum.remove", value, .. }) if value == "["
+        ));
     }
 
     #[test]

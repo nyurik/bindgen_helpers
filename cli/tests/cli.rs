@@ -15,7 +15,7 @@ fn write_temp(name: &str, content: &str) -> PathBuf {
 
 fn bindgen_helper() -> Command {
     let mut command = Command::new(env!("CARGO"));
-    command.args(["run", "--quiet", "--bin", "bindgen-helper"]);
+    command.args(["run", "--quiet", "--bin", "bindgen-helper", "--"]);
     command
 }
 
@@ -40,6 +40,31 @@ fn cli_generates_plain_bindgen_output_without_config() {
     );
     assert!(String::from_utf8_lossy(&output.stderr)
         .contains("warning: no --helper-config provided"));
+    let _ = fs::remove_file(header);
+}
+
+#[test]
+fn cli_generates_plain_bindgen_enum_output_without_config() {
+    let header =
+        write_temp("plain_enum.h", "enum plain_enum { PLAIN_A, PLAIN_B };\n");
+
+    let output = bindgen_helper()
+        .arg(&header)
+        .arg("--disable-header-comment")
+        .output()
+        .expect("failed to run bindgen-helper");
+
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8(output.stdout).expect("stdout was not UTF-8"),
+        "pub const plain_enum_PLAIN_A: plain_enum = 0;\n\
+         pub const plain_enum_PLAIN_B: plain_enum = 1;\n\
+         pub type plain_enum = ::std::os::raw::c_uint;\n"
+    );
     let _ = fs::remove_file(header);
 }
 

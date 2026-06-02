@@ -28,13 +28,13 @@ fn run() -> Result<(), CliError> {
             .map(Vec::into_iter)?,
     )?;
 
-    let helpers = if let Some(helper_config) = helper_config {
+    if let Some(helper_config) = helper_config {
         BindingsBuilder::with_config_file(builder, helper_config)?
+            .write(output)?;
     } else {
         eprintln!("warning: no {HELPER_CONFIG_FLAG} provided; running as plain bindgen");
-        BindingsBuilder::new(builder, false)
-    };
-    helpers.write(output)?;
+        builder.generate()?.write(output)?;
+    }
 
     Ok(())
 }
@@ -57,6 +57,13 @@ fn extract_helper_config(
     }
 
     while let Some(arg) = args.next() {
+        if arg == "--" {
+            // forward all args without processing after seeing '--'
+            bindgen_args.push(arg);
+            bindgen_args.extend(args);
+            break;
+        }
+
         if let Some(remainder) = arg
             .to_str()
             .and_then(|v| v.strip_prefix(HELPER_CONFIG_FLAG))
@@ -68,6 +75,9 @@ fn extract_helper_config(
                 continue;
             }
             if let Some(value) = remainder.strip_prefix('=') {
+                if value.is_empty() {
+                    return Err(CliError::MissingHelperConfigValue);
+                }
                 set_helper_config(&mut helper_config, OsString::from(value))?;
                 continue;
             }
@@ -193,6 +203,14 @@ mod tests {
     }
 
     #[test]
+    fn rejects_empty_equals_helper_config_value() {
+        assert!(matches!(
+            parse(&["bindgen-helper", "wrapper.h", "--helper-config="]),
+            Err(CliError::MissingHelperConfigValue)
+        ));
+    }
+
+    #[test]
     fn rejects_duplicate_helper_config() {
         assert!(matches!(
             parse(&[
@@ -203,5 +221,29 @@ mod tests {
             ]),
             Err(CliError::DuplicateHelperConfig)
         ));
+    }
+
+    #[test]
+    fn forwards_args_after_separator_unchanged() {
+        let parsed = parse(&[
+            "bindgen-helper",
+            "wrapper.h",
+            "--helper-config",
+            "helper.toml",
+            "--",
+            "--helper-config=clang-value",
+        ])
+        .expect("helper config should parse");
+
+        assert_eq!(parsed.helper_config, Some(PathBuf::from("helper.toml")));
+        assert_eq!(
+            parsed.bindgen_args,
+            vec![
+                OsString::from("bindgen-helper"),
+                OsString::from("wrapper.h"),
+                OsString::from("--"),
+                OsString::from("--helper-config=clang-value"),
+            ]
+        );
     }
 }

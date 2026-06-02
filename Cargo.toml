@@ -42,7 +42,7 @@ insta = "1.43.1"
 regex = "1.12.3"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
-toml = ">=0.9.6"  # 0.9.6 is the last version that supports Rust 1.71
+toml = "=0.9.6"  # 0.9.6 is the last version that supports Rust 1.71
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
