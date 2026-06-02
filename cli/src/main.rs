@@ -183,4 +183,25 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn rejects_missing_helper_config_value() {
+        assert!(matches!(
+            parse(&["bindgen-helper", "wrapper.h", "--helper-config"]),
+            Err(CliError::MissingHelperConfigValue)
+        ));
+    }
+
+    #[test]
+    fn rejects_duplicate_helper_config() {
+        assert!(matches!(
+            parse(&[
+                "bindgen-helper",
+                "--helper-config",
+                "first.toml",
+                "--helper-config=second.toml",
+            ]),
+            Err(CliError::DuplicateHelperConfig)
+        ));
+    }
 }

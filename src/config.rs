@@ -344,12 +344,142 @@ fn normalize_name(value: &str) -> String {
 mod tests {
     use super::*;
 
+    fn temp_file(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!(
+            "bindgen_helpers_config_{}_{name}",
+            std::process::id()
+        ))
+    }
+
     #[test]
     fn config_defaults_to_empty() {
         let config: HelperConfig = toml::from_str("").unwrap();
 
         assert!(config.rename_item.is_empty());
         assert!(config.define_enum.is_empty());
+    }
+
+    #[test]
+    fn from_path_reports_read_errors() {
+        let path = temp_file("missing.toml");
+        let _ = std::fs::remove_file(&path);
+
+        assert!(matches!(
+            HelperConfig::from_path(&path),
+            Err(HelperConfigError::Read { .. })
+        ));
+    }
+
+    #[test]
+    fn from_path_reports_parse_errors() {
+        let path = temp_file("invalid.toml");
+        std::fs::write(&path, "not = [valid").unwrap();
+
+        assert!(matches!(
+            HelperConfig::from_path(&path),
+            Err(HelperConfigError::Parse { .. })
+        ));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn apply_rejects_anchored_rename_many() {
+        let config: HelperConfig = toml::from_str(
+            r#"
+[[rename_many]]
+match = "^bad"
+"#,
+        )
+        .unwrap();
+        let mut helpers =
+            BindingsBuilder::new(bindgen::Builder::default(), false);
+
+        assert!(matches!(
+            config.apply_to(&mut helpers),
+            Err(HelperConfigError::AnchoredRenameMany(value)) if value == "^bad"
+        ));
+    }
+
+    #[test]
+    fn apply_rejects_invalid_regex() {
+        let config: HelperConfig = toml::from_str(
+            r#"
+[[define_enum]]
+name = "ErrorCode"
+match = "["
+"#,
+        )
+        .unwrap();
+        let mut helpers =
+            BindingsBuilder::new(bindgen::Builder::default(), false);
+
+        assert!(matches!(
+            config.apply_to(&mut helpers),
+            Err(HelperConfigError::Regex { field: "define_enum.match", value, .. }) if value == "["
+        ));
+    }
+
+    #[test]
+    fn apply_rejects_invalid_enum_value_match() {
+        let config: HelperConfig = toml::from_str(
+            r#"
+[[rename_enum_value]]
+enum_match = "["
+"#,
+        )
+        .unwrap();
+        let mut helpers =
+            BindingsBuilder::new(bindgen::Builder::default(), false);
+
+        assert!(matches!(
+            config.apply_to(&mut helpers),
+            Err(HelperConfigError::Regex { field: "rename_enum_value.enum_match", value, .. }) if value == "["
+        ));
+    }
+
+    #[test]
+    fn ident_renamer_config_can_preserve_case_without_removals() {
+        let renamer = IdentRenamerConfig {
+            case: Some("none".to_owned()),
+            ..IdentRenamerConfig::default()
+        }
+        .to_ident_renamer(Some(Case::Pascal))
+        .unwrap();
+
+        assert!(renamer.remove.is_none());
+        assert!(renamer.case.is_none());
+    }
+
+    #[test]
+    fn apply_accepts_optional_rules() {
+        let config: HelperConfig = toml::from_str(
+            r#"
+[[rename_many]]
+match = "prefix_"
+remove = ["^prefix_"]
+case = "camel"
+
+[[rename_enum_value]]
+enum_match = "my_enum"
+remove = ["^MY_ENUM_"]
+
+[[define_enum]]
+name = "ErrorCode"
+match = "^ERR_"
+repr = "i64"
+min = -10
+max = 10
+exclude = ["^ERR_SKIP$"]
+sort = "value_desc"
+derive = ["Debug"]
+remove = ["^ERR_"]
+"#,
+        )
+        .unwrap();
+        let mut helpers =
+            BindingsBuilder::new(bindgen::Builder::default(), false);
+
+        config.apply_to(&mut helpers).unwrap();
     }
 
     #[test]
@@ -388,6 +518,14 @@ mod tests {
         assert!(matches!(
             parse_sort("value_desc").unwrap(),
             DefineEnumSort::ValueDesc
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_sort() {
+        assert!(matches!(
+            parse_sort("NotASort"),
+            Err(HelperConfigError::UnknownSort(sort)) if sort == "NotASort"
         ));
     }
 }
