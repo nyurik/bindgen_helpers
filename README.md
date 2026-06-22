@@ -150,12 +150,110 @@ pub enum MyEnum {
 
 See the list of all [case variants](https://docs.rs/convert_case/latest/convert_case/enum.Case.html) supported by the `convert_case` crate.
 
+## Config files from `build.rs`
+
+Helper rules can also be loaded from the same TOML file used by the CLI. This keeps larger rename and `#define` enum setups out of `build.rs` while still letting `build.rs` configure bindgen itself.
+
+```rust,ignore
+// build.rs
+use std::{env, path::PathBuf};
+
+use bindgen_helpers::{BindingsBuilder, Builder};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+  println!("cargo:rerun-if-changed=wrapper.h");
+  println!("cargo:rerun-if-changed=bindgen-helper.toml");
+
+  let helpers = BindingsBuilder::with_config_file(
+    Builder::default().header("wrapper.h"),
+    "bindgen-helper.toml",
+  )?;
+
+  let out_path = PathBuf::from(env::var("OUT_DIR")?);
+  helpers.write_to_file(out_path.join("bindings.rs"))?;
+  Ok(())
+}
+```
+
+Use normal bindgen `Builder` methods for bindgen behavior such as headers, allowlists, blocklists, clang args, and layout tests. Use the helper TOML file only for `bindgen_helpers` customizations.
+
+## CLI usage
+
+The separate `bindgen_helpers_cli` package provides a `bindgen-helper` executable. It accepts the same arguments as the upstream `bindgen` CLI and adds one helper-specific option:
+
+```sh
+cargo binstall bindgen_helpers_cli
+```
+
+Or build it from source with Cargo:
+
+```sh
+cargo install bindgen_helpers_cli
+```
+
+```sh
+bindgen-helper wrapper.h \
+  -o src/bindings.rs \
+  --helper-config bindgen-helper.toml \
+  --allowlist-function '^foo_.*' \
+  --allowlist-type '^Foo.*' \
+  -- -Iinclude -DFOO=1
+```
+
+If `--helper-config` is omitted, `bindgen-helper` behaves like plain `bindgen`. Bindgen itself does not have a general config file for its own options, so continue to use normal bindgen CLI flags for headers, output, allowlists, blocklists, clang args, layout tests, and other bindgen behavior. The same helper TOML file works with both `BindingsBuilder::with_config_file` in `build.rs` and `bindgen-helper --helper-config`.
+
+CLI generation is useful when you check generated bindings into the repository or refresh them in CI. A `build.rs` script remains a better fit when bindings need to be generated as part of target-specific Cargo builds.
+
+Example helper config:
+
+```toml
+debug = false
+
+[[rename_item]]
+c = "my_struct"
+rust = "MyStruct"
+
+[[rename_many]]
+match = "foo_.*"
+remove = ["^foo_"]
+case = "Pascal"
+
+[[rename_enum]]
+c = "my_enum"
+rust = "MyEnum"
+remove = ["^I_SAID_", "_ENUM$"]
+case = "Pascal"
+renames = { "MV_IT" = "Value1", "MV_IT2" = "Value2" }
+
+[[rename_enum_value]]
+enum_match = "^(enum )?anonymous_or_special$"
+remove = ["^SPECIAL_"]
+case = "Pascal"
+renames = { "ERR" = "Error" }
+
+[[define_enum]]
+name = "ErrorCode"
+match = "^ERR_"
+repr = "u32"
+min = 0
+max = 999
+exclude = ["_PRIVATE$"]
+sort = "Value"
+derive = ["Debug", "Copy", "Clone", "PartialEq", "Eq"]
+remove = ["^ERR_"]
+case = "Pascal"
+renames = { "WOULD_BLOCK" = "WouldBlock" }
+```
+
+For enum variants and define-backed enum variants, `case` defaults to `Pascal` to match the macro helpers. Set `case = "none"` to preserve the identifier after removals and explicit renames.
+
 ## Development
 
 * This project is easier to develop with [just](https://github.com/casey/just#readme), a modern alternative to `make`.
   Install it with `cargo install just`.
 * To get a list of available commands, run `just`.
 * To run tests, use `just test`.
+* When updating dependencies, make sure to run `just msrv-check` to update `Cargo.msrv.lock` with the minimum supported Rust version that works with the new dependencies.
 
 ## License
 

@@ -327,4 +327,11 @@ mod tests {
         cb.rename_many(Regex::new("bas").unwrap(), IdentRenamer::default());
         assert_eq!(cb.get_regex_str(), "foo.*|bas|bar");
     }
+
+    #[test]
+    fn ident_renamer_preserves_value_without_case() {
+        let renamer = IdentRenamer::default();
+
+        assert_eq!(renamer.apply("ERR_FOO"), "ERR_FOO");
+    }
 }

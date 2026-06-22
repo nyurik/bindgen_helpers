@@ -1,0 +1,24 @@
+[package]
+name = "bindgen_helpers_cli"
+description = "Command-line interface for bindgen_helpers"
+readme = "../README.md"
+keywords = ["ffi", "bindgen", "rename", "case", "convert"]
+categories = ["development-tools::ffi", "development-tools::build-utils"]
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "bindgen-helper"
+path = "src/main.rs"
+
+[dependencies]
+bindgen = { workspace = true, features = ["__cli", "experimental", "prettyplease"] }
+bindgen_helpers.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
