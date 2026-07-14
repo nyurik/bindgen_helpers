@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/nyurik/bindgen_helpers/compare/v0.6.1...v0.6.2) - 2026-07-14
+
+### Other
+
+- fix justfile cargo binstall
+- let rust fmt indent .rs files
+- disallow mem leaking in code
+- ignore CARGO_BUILD_WARNINGS in cargo-install
+- use Rust 1.97 cargo warnings
+- update .gitignore
+- *(deps)* bump the all-actions-version-updates group across 1 directory with 2 updates ([#45](https://github.com/nyurik/bindgen_helpers/pull/45))
+- update dependencies ([#43](https://github.com/nyurik/bindgen_helpers/pull/43))
+
 ## [0.6.1](https://github.com/nyurik/bindgen_helpers/compare/v0.6.0...v0.6.1) - 2026-05-01
 
 ### Other
