@@ -226,4 +226,35 @@ mod tests {
         assert_eq!(define_enum.render(), rendered);
         assert!(rendered.contains("ErrFoo = (ERR_FOO as u32),"));
     }
+
+    #[test]
+    fn test_render_empty_without_values() {
+        let define_enum = DefineEnum::new(
+            "ErrorCode",
+            Regex::new("^ERR_").unwrap(),
+            IdentRenamer::default_case(Case::Pascal),
+        );
+
+        assert_eq!(define_enum.render(), "");
+    }
+
+    #[test]
+    fn test_infers_signed_repr_widths() {
+        assert_eq!(
+            repr_for_values([-1, i64::from(i32::MAX)].into_iter()),
+            "i32"
+        );
+        assert_eq!(
+            repr_for_values([i64::from(i32::MIN) - 1].into_iter()),
+            "i64"
+        );
+    }
+
+    #[test]
+    fn test_infers_large_unsigned_repr() {
+        assert_eq!(
+            repr_for_values([i64::from(u32::MAX) + 1].into_iter()),
+            "u64"
+        );
+    }
 }
