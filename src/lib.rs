@@ -1,4 +1,5 @@
 #![allow(clippy::needless_doctest_main)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
 pub use bindgen::*;
@@ -14,7 +15,9 @@ pub use define_enum::*;
 mod helpers;
 pub use helpers::*;
 
+#[cfg(feature = "config")]
 mod config;
+#[cfg(feature = "config")]
 pub use config::*;
 
 /// Macro to help define renaming rules for an enum and its values.

@@ -4,7 +4,8 @@ use std::path::Path;
 use serde::Deserialize;
 
 use crate::{
-    BindingsBuilder, Case, DefineEnum, DefineEnumSort, IdentRenamer, Regex,
+    BindingsBuilder, Builder, Case, DefineEnum, DefineEnumSort, IdentRenamer,
+    Regex,
 };
 
 /// Helper-specific configuration loaded by the `bindgen-helper` CLI.
@@ -277,6 +278,56 @@ impl HelperConfig {
     }
 }
 
+impl BindingsBuilder {
+    /// Create helpers from an already configured bindgen [`Builder`] and helper
+    /// config.
+    ///
+    /// # Errors
+    /// Returns an error if any helper config rule is invalid.
+    pub fn with_config(
+        builder: Builder,
+        config: &HelperConfig,
+    ) -> Result<Self, HelperConfigError> {
+        let mut helpers = Self::new(builder, config.debug);
+        helpers.apply_config(config)?;
+        Ok(helpers)
+    }
+
+    /// Create helpers from an already configured bindgen [`Builder`] and a TOML
+    /// helper config file.
+    ///
+    /// # Errors
+    /// Returns an error if the helper config cannot be read, parsed, or applied.
+    pub fn with_config_file(
+        builder: Builder,
+        path: impl AsRef<Path>,
+    ) -> Result<Self, HelperConfigError> {
+        Self::with_config(builder, &HelperConfig::from_path(path)?)
+    }
+
+    /// Apply helper config rules to this builder.
+    ///
+    /// # Errors
+    /// Returns an error if any helper config rule is invalid.
+    pub fn apply_config(
+        &mut self,
+        config: &HelperConfig,
+    ) -> Result<(), HelperConfigError> {
+        config.apply_to(self)
+    }
+
+    /// Load and apply helper config rules from a TOML file.
+    ///
+    /// # Errors
+    /// Returns an error if the helper config cannot be read, parsed, or applied.
+    pub fn apply_config_file(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> Result<(), HelperConfigError> {
+        self.apply_config(&HelperConfig::from_path(path)?)
+    }
+}
+
 impl IdentRenamerConfig {
     fn to_ident_renamer(
         &self,
@@ -409,8 +460,7 @@ match = "^bad"
 "#,
         )
         .unwrap();
-        let mut helpers =
-            BindingsBuilder::new(bindgen::Builder::default(), false);
+        let mut helpers = BindingsBuilder::new(Builder::default(), false);
 
         assert!(matches!(
             config.apply_to(&mut helpers),
@@ -428,8 +478,7 @@ match = "["
 "#,
         )
         .unwrap();
-        let mut helpers =
-            BindingsBuilder::new(bindgen::Builder::default(), false);
+        let mut helpers = BindingsBuilder::new(Builder::default(), false);
 
         assert!(matches!(
             config.apply_to(&mut helpers),
@@ -446,8 +495,7 @@ enum_match = "["
 "#,
         )
         .unwrap();
-        let mut helpers =
-            BindingsBuilder::new(bindgen::Builder::default(), false);
+        let mut helpers = BindingsBuilder::new(Builder::default(), false);
 
         assert!(matches!(
             config.apply_to(&mut helpers),
@@ -479,8 +527,7 @@ remove = ["["]
 "#,
         )
         .unwrap();
-        let mut helpers =
-            BindingsBuilder::new(bindgen::Builder::default(), false);
+        let mut helpers = BindingsBuilder::new(Builder::default(), false);
 
         assert!(matches!(
             config.apply_to(&mut helpers),
@@ -514,8 +561,7 @@ remove = ["^ERR_"]
 "#,
         )
         .unwrap();
-        let mut helpers =
-            BindingsBuilder::new(bindgen::Builder::default(), false);
+        let mut helpers = BindingsBuilder::new(Builder::default(), false);
 
         config.apply_to(&mut helpers).unwrap();
     }

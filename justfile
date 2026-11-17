@@ -26,9 +26,10 @@ bless *args:  (cargo-install 'cargo-insta')
 build:
     cargo build {{locked}} --workspace --all-features --all-targets
 
-# Quick compile without building a binary
-check:
-    cargo check {{locked}} --workspace --all-features --all-targets
+# Quick compile without building a binary. Also checks the library without any optional features.
+check *args:
+    cargo check {{locked}} --workspace --all-features --all-targets {{args}}
+    cargo check {{locked}} --package {{main_crate}} --no-default-features --all-targets
 
 # Generate code coverage report to upload to codecov.io
 ci-coverage: env-info && \
@@ -39,20 +40,24 @@ ci-coverage: env-info && \
 # Run all checks locally. Cargo.lock may be created or updated.
 local-test: env-info test-fmt clippy check test test-doc
 
-# Run all tests as expected by CI, restoring Cargo.lock afterwards.
+# Run all tests as expected by CI, with the newest dependency versions. Cargo.lock is created if missing.
 ci-test:
-    {{just}} _use_msrv {{just}} local-test
+    @if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
+    {{just}} local-test
     {{just}} assert-git-is-clean
 
-# Run minimal subset of tests to ensure compatibility with MSRV in CI.
-# Fails if Cargo.msrv.lock would change.
+# Check that everything but the CLI, which has its own newer MSRV, compiles with the MSRV and the minimal dependency
+# versions in Cargo.msrv.lock. Fails if Cargo.msrv.lock would change.
 ci-test-msrv:
-    RUSTUP_TOOLCHAIN="$({{just}} get-msrv)" {{just}} _use_msrv {{just}} env-info check _assert-msrv-lock
+    RUSTUP_TOOLCHAIN="$({{just}} get-msrv)" {{just}} _use_msrv {{just}} env-info _check-msrv _assert-msrv-lock
     {{just}} assert-git-is-clean
+
+# Check everything the MSRV applies to: all crates but the CLI.
+_check-msrv: (check '--exclude' 'bindgen_helpers_cli')
 
 # Run MSRV check locally and copy resolved lockfile changes back to Cargo.msrv.lock.
 msrv-check:
-    {{just}} _use_msrv {{just}} check _save-msrv-lock
+    {{just}} _use_msrv {{just}} _check-msrv _save-msrv-lock
 
 # Run a command with Cargo.msrv.lock copied to Cargo.lock, then restore the original Cargo.lock.
 _use_msrv *args:

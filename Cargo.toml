@@ -10,13 +10,21 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+# Load rename and `#define` enum rules from a TOML file: `HelperConfig`, `BindingsBuilder::with_config_file`, etc.
+config = ["dep:serde", "dep:toml"]
+
 [dependencies]
 bindgen.workspace = true
 convert_case.workspace = true
 regex.workspace = true
-serde.workspace = true
+serde = { workspace = true, optional = true }
 thiserror.workspace = true
-toml.workspace = true
+toml = { workspace = true, optional = true }
 
 [lints]
 workspace = true
@@ -35,14 +43,16 @@ license = "MIT OR Apache-2.0"
 rust-version = "1.71"
 
 [workspace.dependencies]
-bindgen = ">=0.72.0"
+# The library accepts wide ranges of its dependencies. `Cargo.msrv.lock` holds the minimal versions,
+# which `just ci-test-msrv` compiles with the MSRV toolchain; `just ci-test` uses the newest ones.
+bindgen = ">=0.72.0"  # 0.72 is the first with the current `ParseCallbacks::item_name` signature
 bindgen_helpers = { path = ".", version = "0.6.1" }
-convert_case = "0.12.0"
+convert_case = ">=0.8.0, <0.13"  # 0.8 is the first with `Case<'a>`
 insta = "1.43.1"
-regex = "1.12.3"
-serde = { version = "1.0.228", features = ["derive"] }
-thiserror = "2.0.18"
-toml = "=0.9.6"  # 0.9.6 is the last version that supports Rust 1.71
+regex = "1.5.6"
+serde = { version = "1.0.150", features = ["derive"] }
+thiserror = ">=1.0.40, <3"
+toml = ">=0.7.8, <2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

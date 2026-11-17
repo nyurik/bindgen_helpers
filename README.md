@@ -152,7 +152,12 @@ See the list of all [case variants](https://docs.rs/convert_case/latest/convert_
 
 ## Config files from `build.rs`
 
-Helper rules can also be loaded from the same TOML file used by the CLI. This keeps larger rename and `#define` enum setups out of `build.rs` while still letting `build.rs` configure bindgen itself.
+Helper rules can also be loaded from the same TOML file used by the CLI. This keeps larger rename and `#define` enum setups out of `build.rs` while still letting `build.rs` configure bindgen itself. This requires the `config` feature, which adds the `serde` and `toml` dependencies:
+
+```toml
+[build-dependencies]
+bindgen_helpers = { version = "0.6", features = ["config"] }
+```
 
 ```rust,ignore
 // build.rs
