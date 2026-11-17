@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      cli_tag:
+        description: 'Attach the bindgen-helper binaries to this existing release, e.g. v0.6.2; empty for none'
+        required: false
+        default: ''
 
 defaults:
   run:
@@ -60,10 +65,36 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: target/llvm-cov/codecov.info
 
+  # Build the release binaries on every run, kept as its artifacts, which the release-plz job attaches to a release.
+  # Run by hand with cli_tag, it builds that tag.
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    # The oldest supported runner, so that the binary needs an older glibc. Not musl: a static musl binary cannot load
+    # libclang at runtime.
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ x86_64-unknown-linux-gnu ]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.cli_tag }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with: { tool: just }
+      - run: just dist '${{ matrix.target }}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bindgen-helper-${{ matrix.target }}
+          path: target/dist/bindgen-helper-${{ matrix.target }}.*
+          if-no-files-found: error
+
   # This job checks if any of the previous jobs failed or were canceled.
   # This approach also allows some jobs to be skipped if they are not needed.
   ci-passed:
-    needs: [ test, test-msrv ]
+    needs: [ test, test-msrv, build-binaries ]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -78,9 +109,11 @@ jobs:
     if: |
       always()
       && needs.ci-passed.result == 'success'
-      && github.event_name == 'push'
-      && github.ref == 'refs/heads/main'
       && github.repository_owner == 'nyurik'
+      && (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        || (github.event_name == 'workflow_dispatch' && startsWith(inputs.cli_tag, 'v'))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,56 +122,44 @@ jobs:
     concurrency:
       group: release-plz-${{ github.ref }}
       cancel-in-progress: false
-    outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-      releases: ${{ steps.release.outputs.releases }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish to crates.io if crate's version is newer
+      - if: github.event_name == 'push'
+        name: Publish to crates.io if crate's version is newer
         uses: release-plz/action@v0.5
         id: release
         with: { command: release }
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+      # The library makes the `vX.Y.Z` tag and GitHub release for both crates, see release-plz.toml
+      - if: ${{ steps.release.outputs.releases_created == 'true' }}
+        name: Find the tag of the release, if the CLI was released
+        id: cli
+        env:
+          RELEASES: ${{ steps.release.outputs.releases }}
+        run: |
+          cli="$(jq -r '.[] | select(.package_name == "bindgen_helpers_cli") | .version' <<< "$RELEASES")"
+          tag="$(jq -r '.[] | select(.package_name == "bindgen_helpers") | .tag' <<< "$RELEASES")"
+          if [ -n "$cli" ] && [ "$tag" != "v$cli" ]; then
+            echo "::error::bindgen_helpers and bindgen_helpers_cli were not released together: $RELEASES"
+            exit 1
+          fi
+          echo "tag=${cli:+$tag}" >> "$GITHUB_OUTPUT"
       - if: ${{ steps.release.outputs.releases_created == 'false' }}
         name: If version is the same, create a PR proposing new version and changelog for the next release
         uses: release-plz/action@v0.5
         with: { command: release-pr }
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
-
-  # Attach the Linux CLI binary to the GitHub release that release-plz has just created
-  release-binaries:
-    needs: [ release-plz ]
-    if: needs.release-plz.outputs.releases_created == 'true'
-    # The oldest supported runner, so that the binary needs an older glibc
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - name: Find the release tag
-        id: tag
-        env:
-          RELEASES: ${{ needs.release-plz.outputs.releases }}
-        run: |
-          # The library makes the tag and the GitHub release, see release-plz.toml
-          tag="$(jq -r '.[] | select(.package_name == "bindgen_helpers") | .tag' <<< "$RELEASES")"
-          cli="$(jq -r '.[] | select(.package_name == "bindgen_helpers_cli") | .version' <<< "$RELEASES")"
-          if [ -z "$tag" ] || [ "$tag" != "v$cli" ]; then
-            echo "::error::bindgen_helpers and bindgen_helpers_cli were not released together: $RELEASES"
-            exit 1
-          fi
-          echo "value=$tag" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v7
-        with: { ref: 'refs/tags/${{ steps.tag.outputs.value }}' }
-      - uses: taiki-e/upload-rust-binary-action@v1
+      # Attach this run's binaries to the release just made, or to cli_tag's; the release's notes are kept
+      - if: steps.cli.outputs.tag || inputs.cli_tag
+        uses: actions/download-artifact@v8
+        with: { pattern: bindgen-helper-*, merge-multiple: true, path: target/dist }
+      - if: steps.cli.outputs.tag || inputs.cli_tag
+        uses: softprops/action-gh-release@v3
         with:
-          bin: bindgen-helper
-          package: bindgen_helpers_cli
-          target: x86_64-unknown-linux-gnu
-          locked: true
-          checksum: sha256
-          ref: 'refs/tags/${{ steps.tag.outputs.value }}'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.cli.outputs.tag || inputs.cli_tag }}
+          files: target/dist/*
+          fail_on_unmatched_files: true

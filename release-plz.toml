@@ -3,7 +3,7 @@ dependencies_update = true
 git_release_name = "v{{ version }}"
 git_tag_name = "v{{ version }}"
 # The library and the CLI share one version, so only the library makes the `vX.Y.Z` tag and GitHub release.
-# The CI `release-binaries` job attaches the CLI binary to it.
+# The CI release-plz job attaches the CLI binaries, built by the `build-binaries` job, to it.
 git_release_enable = false
 git_tag_enable = false
 

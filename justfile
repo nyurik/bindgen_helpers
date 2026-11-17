@@ -12,6 +12,9 @@ binstall_args := if env('CI', '') != '' {'--no-confirm --no-track --disable-tele
 ci_mode := if env('CI', '') != '' {'1'} else {''}
 export CARGO_BUILD_WARNINGS := env('CARGO_BUILD_WARNINGS', if ci_mode == '1' {'deny'} else {'warn'})
 export RUST_BACKTRACE := env('RUST_BACKTRACE', if ci_mode == '1' {'1'} else {'0'})
+# Where `dist` puts the release asset: bindgen-helper-<target>.tar.gz with the binary and the licenses, as
+# cli/Cargo.toml's binstall metadata expects
+dist_dir := 'target/dist'
 # Cargo lock behavior - enabled in CI.
 locked := if env('CI', '') != '' {'--locked'} else {''}
 
@@ -103,6 +106,14 @@ clippy *args:
 coverage *args='--open':  (cargo-install 'cargo-llvm-cov')
     cargo llvm-cov clean --workspace
     cargo llvm-cov --workspace --all-features --all-targets --include-build-script {{args}}
+
+# Build the CLI's release binary for `target`, and pack it as the release asset in `target/dist`
+dist target:
+    rustup target add {{quote(target)}}
+    cargo build --release --locked --package bindgen_helpers_cli --bin bindgen-helper --target {{quote(target)}}
+    rm -rf {{quote(dist_dir / 'bindgen-helper-' + target)}}* && mkdir -p {{quote(dist_dir / 'bindgen-helper-' + target)}}
+    cp {{quote('target' / target / 'release/bindgen-helper')}} LICENSE-MIT LICENSE-APACHE {{quote(dist_dir / 'bindgen-helper-' + target)}}/
+    cd {{quote(dist_dir / 'bindgen-helper-' + target)}} && tar acf {{quote('../bindgen-helper-' + target + '.tar.gz')}} bindgen-helper LICENSE-MIT LICENSE-APACHE
 
 # Build and open code documentation
 docs *args='--open':
