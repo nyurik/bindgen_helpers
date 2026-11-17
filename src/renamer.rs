@@ -201,7 +201,7 @@ impl Renamer {
                     println!("cargo::warning=Unrecognized {what}");
                 }
                 DebugOutput::Stderr => {
-                    eprintln!("warning: unrecognized {what}")
+                    eprintln!("warning: unrecognized {what}");
                 }
             }
         }

@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::sync::{Arc, Mutex};
 
 use crate::{IdentRenamer, Regex};
@@ -188,12 +189,17 @@ impl DefineEnum {
                 variant_name,
                 value,
             } = value;
-            output.push_str(&if fits_repr(*value, repr) {
-                format!("    /// `{const_name}`\n    {variant_name} = {value},\n")
+            // Writing to a String cannot fail
+            let _ = writeln!(output, "    /// `{const_name}`");
+            let _ = if fits_repr(*value, repr) {
+                writeln!(output, "    {variant_name} = {value},")
             } else {
                 // Same conversion as C, e.g. -1 to 0xFFFF_FFFF for `u32`
-                format!("    /// `{const_name}`\n    {variant_name} = ({value}_i64 as {repr}),\n")
-            });
+                writeln!(
+                    output,
+                    "    {variant_name} = ({value}_i64 as {repr}),"
+                )
+            };
         }
         output.push_str("}\n");
         output
