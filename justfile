@@ -29,10 +29,11 @@ bless *args:  (cargo-install 'cargo-insta')
 build:
     cargo build {{locked}} --workspace --all-features --all-targets
 
-# Quick compile without building a binary. Also checks the library without any optional features.
+# Quick compile without building a binary. Also checks the library with its default features, i.e. without `config`.
+# Not with `--no-default-features`: without bindgen's `runtime`, clang-sys links libclang at build time, which CI lacks.
 check *args:
     cargo check {{locked}} --workspace --all-features --all-targets {{args}}
-    cargo check {{locked}} --package {{main_crate}} --no-default-features --all-targets
+    cargo check {{locked}} --package {{main_crate}} --all-targets
 
 # Generate code coverage report to upload to codecov.io
 ci-coverage: env-info && \
