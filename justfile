@@ -12,6 +12,9 @@ binstall_args := if env('CI', '') != '' {'--no-confirm --no-track --disable-tele
 ci_mode := if env('CI', '') != '' {'1'} else {''}
 export CARGO_BUILD_WARNINGS := env('CARGO_BUILD_WARNINGS', if ci_mode == '1' {'deny'} else {'warn'})
 export RUST_BACKTRACE := env('RUST_BACKTRACE', if ci_mode == '1' {'1'} else {'0'})
+# Where `dist` puts the release asset: bindgen-helper-<target>.tar.gz with the binary and the licenses, as
+# cli/Cargo.toml's binstall metadata expects
+dist_dir := 'target/dist'
 # Cargo lock behavior - enabled in CI.
 locked := if env('CI', '') != '' {'--locked'} else {''}
 
@@ -26,9 +29,11 @@ bless *args:  (cargo-install 'cargo-insta')
 build:
     cargo build {{locked}} --workspace --all-features --all-targets
 
-# Quick compile without building a binary
-check:
-    cargo check {{locked}} --workspace --all-features --all-targets
+# Quick compile without building a binary. Also checks the library with its default features, i.e. without `config`.
+# Not with `--no-default-features`: without bindgen's `runtime`, clang-sys links libclang at build time, which CI lacks.
+check *args:
+    cargo check {{locked}} --workspace --all-features --all-targets {{args}}
+    cargo check {{locked}} --package {{main_crate}} --all-targets
 
 # Generate code coverage report to upload to codecov.io
 ci-coverage: env-info && \
@@ -39,20 +44,23 @@ ci-coverage: env-info && \
 # Run all checks locally. Cargo.lock may be created or updated.
 local-test: env-info test-fmt clippy check test test-doc
 
-# Run all tests as expected by CI, restoring Cargo.lock afterwards.
+# Run all tests as expected by CI, using the committed Cargo.lock.
 ci-test:
-    {{just}} _use_msrv {{just}} local-test
+    {{just}} local-test
     {{just}} assert-git-is-clean
 
-# Run minimal subset of tests to ensure compatibility with MSRV in CI.
-# Fails if Cargo.msrv.lock would change.
+# Check that everything but the CLI, which has its own newer MSRV, compiles with the MSRV and the minimal dependency
+# versions in Cargo.msrv.lock. Fails if Cargo.msrv.lock would change.
 ci-test-msrv:
-    RUSTUP_TOOLCHAIN="$({{just}} get-msrv)" {{just}} _use_msrv {{just}} env-info check _assert-msrv-lock
+    RUSTUP_TOOLCHAIN="$({{just}} get-msrv)" {{just}} _use_msrv {{just}} env-info _check-msrv _assert-msrv-lock
     {{just}} assert-git-is-clean
+
+# Check everything the MSRV applies to: all crates but the CLI.
+_check-msrv: (check '--exclude' 'bindgen_helpers_cli')
 
 # Run MSRV check locally and copy resolved lockfile changes back to Cargo.msrv.lock.
 msrv-check:
-    {{just}} _use_msrv {{just}} check _save-msrv-lock
+    {{just}} _use_msrv {{just}} _check-msrv _save-msrv-lock
 
 # Run a command with Cargo.msrv.lock copied to Cargo.lock, then restore the original Cargo.lock.
 _use_msrv *args:
@@ -90,15 +98,23 @@ _save-msrv-lock:
 # Clean all build artifacts
 clean:
     cargo clean
-    rm -f Cargo.lock
 
 # Run cargo clippy to lint the code
 clippy *args:
     cargo clippy {{locked}} --workspace --all-features --all-targets {{args}}
 
 # Generate code coverage report. Will install `cargo llvm-cov` if missing.
-coverage *args='--no-clean --open':  (cargo-install 'cargo-llvm-cov')
+coverage *args='--open':  (cargo-install 'cargo-llvm-cov')
+    cargo llvm-cov clean --workspace
     cargo llvm-cov --workspace --all-features --all-targets --include-build-script {{args}}
+
+# Build the CLI's release binary for `target`, and pack it as the release asset in `target/dist`
+dist target:
+    rustup target add {{quote(target)}}
+    cargo build --release --locked --package bindgen_helpers_cli --bin bindgen-helper --target {{quote(target)}}
+    rm -rf {{quote(dist_dir / 'bindgen-helper-' + target)}}* && mkdir -p {{quote(dist_dir / 'bindgen-helper-' + target)}}
+    cp {{quote('target' / target / 'release/bindgen-helper')}} LICENSE-MIT LICENSE-APACHE {{quote(dist_dir / 'bindgen-helper-' + target)}}/
+    cd {{quote(dist_dir / 'bindgen-helper-' + target)}} && tar acf {{quote('../bindgen-helper-' + target + '.tar.gz')}} bindgen-helper LICENSE-MIT LICENSE-APACHE
 
 # Build and open code documentation
 docs *args='--open':
@@ -142,15 +158,22 @@ get-msrv package=main_crate:  (get-crate-field 'rust_version' package)
 msrv:  (cargo-install 'cargo-msrv')
     cargo msrv find --write-msrv -- {{just}} ci-test-msrv
 
-# Initialize Cargo.lock file with minimal versions of dependencies.
+# Initialize Cargo.msrv.lock with the minimal versions of dependencies.
+# Cargo.lock is set aside and restored afterwards. Run `just msrv-check` afterwards to add the dev-dependencies.
 msrv-init:  (cargo-install 'cargo-minimal-versions')
-    rm -f Cargo.msrv.lock Cargo.lock
-    @if ! cargo minimal-versions check --workspace ; then \
-        echo "ERROR: Could not generate minimal Cargo.msrv.lock" ;\
-        echo "       fix the lock file with 'cargo update ... --precise ...'" ;\
-        echo "       make sure it passes 'just check' " ;\
-        echo "       once done, rename Cargo.lock to Cargo.msrv.lock" ;\
-        exit 1 ;\
+    #!/usr/bin/env bash
+    set -euo pipefail
+    backup="$(mktemp Cargo.lock.bak.XXXXXX)"
+    mv Cargo.lock "$backup"
+    trap 'mv "$backup" Cargo.lock' EXIT
+    rm -f Cargo.msrv.lock
+    if ! cargo minimal-versions check --workspace ; then
+        echo "ERROR: Could not generate minimal Cargo.msrv.lock"
+        echo "       fix it with 'cargo update ... --precise ...' until 'just check' passes,"
+        echo "       then rename Cargo.lock to Cargo.msrv.lock"
+        trap - EXIT
+        echo "       The original Cargo.lock is in $backup"
+        exit 1
     fi
     mv Cargo.lock Cargo.msrv.lock
 

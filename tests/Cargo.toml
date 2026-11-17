@@ -7,7 +7,7 @@ version = "0.0.0"
 publish = false
 
 [dev-dependencies]
-bindgen_helpers = { path = ".." }
+bindgen_helpers = { path = "..", features = ["config"] }
 insta.workspace = true
 
 [lints]

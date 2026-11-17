@@ -1,11 +1,19 @@
+use std::fmt::Write as _;
 use std::sync::{Arc, Mutex};
 
 use crate::{IdentRenamer, Regex};
 
 /// Collect matching integer `#define` constants and render a Rust enum for them.
 ///
-/// Bindgen still emits the matched constants as usual. The rendered enum uses those
-/// constants as discriminants, e.g. `Foo = (ERR_FOO as u32)`.
+/// Bindgen still emits the matched constants as usual, unless an allowlist or
+/// a blocklist leaves them out. The rendered enum does not refer to them: its
+/// discriminants are the macro values, e.g. `Foo = 1`, with a `(value as repr)`
+/// cast when an explicit [`with_repr`](Self::with_repr) cannot hold the value.
+///
+/// Rust rejects an enum whose variants share a discriminant (error E0081), so
+/// when several matching macros have the same value, e.g. aliases such as
+/// `ERR_AGAIN` and `ERR_WOULD_BLOCK`, keep only one of them with
+/// [`exclude`](Self::exclude).
 #[derive(Debug, Clone)]
 pub struct DefineEnum {
     enum_name: String,
@@ -176,17 +184,43 @@ impl DefineEnum {
             self.enum_name
         );
         for value in &values {
-            output.push_str("    ");
-            output.push_str(&value.variant_name);
-            output.push_str(" = (");
-            output.push_str(&value.const_name);
-            output.push_str(" as ");
-            output.push_str(repr);
-            output.push_str("),\n");
+            let DefineEnumValue {
+                const_name,
+                variant_name,
+                value,
+            } = value;
+            // Writing to a String cannot fail
+            let _ = writeln!(output, "    /// `{const_name}`");
+            let _ = if fits_repr(*value, repr) {
+                writeln!(output, "    {variant_name} = {value},")
+            } else {
+                // Same conversion as C, e.g. -1 to 0xFFFF_FFFF for `u32`
+                writeln!(
+                    output,
+                    "    {variant_name} = ({value}_i64 as {repr}),"
+                )
+            };
         }
         output.push_str("}\n");
         output
     }
+}
+
+/// Whether `value` is in the range of the integer type `repr`, so that it can be a discriminant as is.
+fn fits_repr(value: i64, repr: &str) -> bool {
+    let (min, max) = match repr {
+        "i8" => (i128::from(i8::MIN), i128::from(i8::MAX)),
+        "i16" => (i128::from(i16::MIN), i128::from(i16::MAX)),
+        "i32" => (i128::from(i32::MIN), i128::from(i32::MAX)),
+        "i64" | "i128" => return true,
+        "u8" => (0, i128::from(u8::MAX)),
+        "u16" => (0, i128::from(u16::MAX)),
+        "u32" => (0, i128::from(u32::MAX)),
+        "u64" | "u128" => return value >= 0,
+        // Platform-dependent or unknown types: let the cast decide
+        _ => return false,
+    };
+    (min..=max).contains(&i128::from(value))
 }
 
 fn repr_for_values(values: impl Iterator<Item = i64>) -> &'static str {
@@ -224,6 +258,66 @@ mod tests {
         let rendered = define_enum.render();
 
         assert_eq!(define_enum.render(), rendered);
-        assert!(rendered.contains("ErrFoo = (ERR_FOO as u32),"));
+        assert!(rendered.contains("    /// `ERR_FOO`\n    ErrFoo = 1,\n"));
+    }
+
+    #[test]
+    fn test_render_casts_values_outside_explicit_repr() {
+        let define_enum = DefineEnum::new(
+            "ErrorCode",
+            Regex::new("^ERR_").unwrap(),
+            IdentRenamer::default_case(Case::Pascal),
+        )
+        .with_repr("u8");
+        define_enum.record_matching_macro("ERR_OK", 255);
+        define_enum.record_matching_macro("ERR_BIG", 256);
+        define_enum.record_matching_macro("ERR_NEG", -1);
+
+        let rendered = define_enum.render();
+
+        assert!(rendered.contains("ErrOk = 255,"));
+        assert!(rendered.contains("ErrBig = (256_i64 as u8),"));
+        assert!(rendered.contains("ErrNeg = (-1_i64 as u8),"));
+    }
+
+    #[test]
+    fn test_fits_repr() {
+        assert!(fits_repr(-1, "i8"));
+        assert!(!fits_repr(-1, "u64"));
+        assert!(fits_repr(i64::MAX, "u64"));
+        assert!(!fits_repr(i64::from(u32::MAX) + 1, "u32"));
+        assert!(fits_repr(i64::MIN, "i128"));
+        assert!(!fits_repr(0, "usize"));
+    }
+
+    #[test]
+    fn test_render_empty_without_values() {
+        let define_enum = DefineEnum::new(
+            "ErrorCode",
+            Regex::new("^ERR_").unwrap(),
+            IdentRenamer::default_case(Case::Pascal),
+        );
+
+        assert_eq!(define_enum.render(), "");
+    }
+
+    #[test]
+    fn test_infers_signed_repr_widths() {
+        assert_eq!(
+            repr_for_values([-1, i64::from(i32::MAX)].into_iter()),
+            "i32"
+        );
+        assert_eq!(
+            repr_for_values([i64::from(i32::MIN) - 1].into_iter()),
+            "i64"
+        );
+    }
+
+    #[test]
+    fn test_infers_large_unsigned_repr() {
+        assert_eq!(
+            repr_for_values([i64::from(u32::MAX) + 1].into_iter()),
+            "u64"
+        );
     }
 }

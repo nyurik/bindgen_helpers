@@ -1,0 +1,31 @@
+[package]
+name = "bindgen_helpers_cli"
+description = "Command-line interface for bindgen_helpers"
+readme = "../README.md"
+keywords = ["ffi", "bindgen", "rename", "case", "convert"]
+categories = ["development-tools::ffi", "development-tools::build-utils"]
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+# Unlike the library, the CLI tracks the latest dependencies, e.g. toml 1.x needs Rust 1.85
+rust-version = "1.85"
+version.workspace = true
+
+# `cargo binstall bindgen_helpers_cli` downloads the archive `just dist` makes, which CI attaches to the `v<version>` release
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/bindgen-helper-{ target }{ archive-suffix }"
+bin-dir = "{ bin }{ binary-ext }"
+
+[[bin]]
+name = "bindgen-helper"
+path = "src/main.rs"
+
+[dependencies]
+# `__cli` is bindgen's internal interface for its own CLI: stay within the tested bindgen versions.
+bindgen = { version = ">=0.72.0, <0.74", features = ["__cli", "experimental", "prettyplease"] }
+bindgen_helpers = { workspace = true, features = ["config"] }
+thiserror.workspace = true
+
+[lints]
+workspace = true

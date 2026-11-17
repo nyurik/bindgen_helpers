@@ -2,7 +2,10 @@ use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::path::Path;
 
-use crate::{BindgenError, Builder, DefineEnum, IdentRenamer, Regex, Renamer};
+use crate::{
+    BindgenError, Builder, DebugOutput, DefineEnum, IdentRenamer, Regex,
+    Renamer,
+};
 
 /// High-level bindgen helper that owns a configured bindgen [`Builder`].
 ///
@@ -41,13 +44,21 @@ pub enum BindingsBuilderError {
 }
 
 impl BindingsBuilder {
-    /// Create helpers with optional debug warnings from the internal callback.
+    /// Create helpers with optional debug warnings about the C items no rule
+    /// matched. They are `cargo::warning=` lines on stdout, for `build.rs`,
+    /// unless changed with [`set_debug_output`](Self::set_debug_output).
     #[must_use]
     pub fn new(builder: Builder, debug: bool) -> Self {
         Self {
             builder,
             renamer: Renamer::new(debug),
         }
+    }
+
+    /// Set where debug output goes, if enabled with [`BindingsBuilder::new`].
+    /// Use [`DebugOutput::Stderr`] when the bindings are written to stdout.
+    pub fn set_debug_output(&mut self, output: DebugOutput) {
+        self.renamer.set_debug_output(output);
     }
 
     /// Rename a single C item, e.g., a struct, enum, or a typedef.
