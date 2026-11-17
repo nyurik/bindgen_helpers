@@ -12,6 +12,12 @@ repository.workspace = true
 rust-version = "1.85"
 version.workspace = true
 
+# For `cargo binstall`: the archive that the CI `release-binaries` job attaches to the GitHub release
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/bindgen-helper-{ target }.tar.gz"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
 [[bin]]
 name = "bindgen-helper"
 path = "src/main.rs"

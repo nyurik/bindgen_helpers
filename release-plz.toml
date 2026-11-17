@@ -2,3 +2,23 @@
 dependencies_update = true
 git_release_name = "v{{ version }}"
 git_tag_name = "v{{ version }}"
+# The library and the CLI share one version, so only the library makes the `vX.Y.Z` tag and GitHub release.
+# The CI `release-binaries` job attaches the CLI binary to it.
+git_release_enable = false
+git_tag_enable = false
+
+[[package]]
+name = "bindgen_helpers"
+# A CLI-only change also bumps the library, so the two always release together
+changelog_include = ["bindgen_helpers_cli"]
+git_release_enable = true
+git_tag_enable = true
+version_group = "bindgen_helpers"
+
+[[package]]
+name = "bindgen_helpers_cli"
+# Its changes are in the library's changelog
+changelog_update = false
+# Never created, but must differ from the library's tag: release-plz takes an existing tag as a past release
+git_tag_name = "bindgen_helpers_cli-v{{ version }}"
+version_group = "bindgen_helpers"

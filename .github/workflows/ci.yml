@@ -89,6 +89,9 @@ jobs:
     concurrency:
       group: release-plz-${{ github.ref }}
       cancel-in-progress: false
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      releases: ${{ steps.release.outputs.releases }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
@@ -105,3 +108,37 @@ jobs:
         with: { command: release-pr }
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+
+  # Attach the Linux CLI binary to the GitHub release that release-plz has just created
+  release-binaries:
+    needs: [ release-plz ]
+    if: needs.release-plz.outputs.releases_created == 'true'
+    # The oldest supported runner, so that the binary needs an older glibc
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Find the release tag
+        id: tag
+        env:
+          RELEASES: ${{ needs.release-plz.outputs.releases }}
+        run: |
+          # The library makes the tag and the GitHub release, see release-plz.toml
+          tag="$(jq -r '.[] | select(.package_name == "bindgen_helpers") | .tag' <<< "$RELEASES")"
+          cli="$(jq -r '.[] | select(.package_name == "bindgen_helpers_cli") | .version' <<< "$RELEASES")"
+          if [ -z "$tag" ] || [ "$tag" != "v$cli" ]; then
+            echo "::error::bindgen_helpers and bindgen_helpers_cli were not released together: $RELEASES"
+            exit 1
+          fi
+          echo "value=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with: { ref: 'refs/tags/${{ steps.tag.outputs.value }}' }
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: bindgen-helper
+          package: bindgen_helpers_cli
+          target: x86_64-unknown-linux-gnu
+          locked: true
+          checksum: sha256
+          ref: 'refs/tags/${{ steps.tag.outputs.value }}'
+          token: ${{ secrets.GITHUB_TOKEN }}
