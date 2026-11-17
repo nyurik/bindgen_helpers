@@ -21,8 +21,10 @@ fn test_define_enum_minimal() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        ErrFoo = (ERR_FOO as u32),
-        ErrBar = (ERR_BAR as u32),
+        /// `ERR_FOO`
+        ErrFoo = 1,
+        /// `ERR_BAR`
+        ErrBar = 2,
     }
     ");
 }
@@ -57,9 +59,12 @@ fn test_define_enum_min_max() {
     #[repr(i32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Low = (ERR_LOW as i32),
-        Mid = (ERR_MID as i32),
-        High = (ERR_HIGH as i32),
+        /// `ERR_LOW`
+        Low = 0,
+        /// `ERR_MID`
+        Mid = 2,
+        /// `ERR_HIGH`
+        High = 3,
     }
     ");
 }
@@ -87,7 +92,7 @@ fn test_define_enum_all_options() {
         "WOULD_BLOCK" => "WouldBlock",
     );
 
-    assert_snapshot!(test_with_define_enums(&cb, header), @r"
+    assert_snapshot!(test_with_define_enums(&cb, header), @"
     pub const ERR_WOULD_BLOCK: u32 = 11;
     pub const ERR_BAR: u32 = 2;
     pub const ERR_PRIVATE: u32 = 20;
@@ -97,9 +102,12 @@ fn test_define_enum_all_options() {
     #[repr(u32)]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, serde::Serialize)]
     pub enum ErrorCode {
-        Foo = (ERR_FOO as u32),
-        Bar = (ERR_BAR as u32),
-        WouldBlock = (ERR_WOULD_BLOCK as u32),
+        /// `ERR_FOO`
+        Foo = 1,
+        /// `ERR_BAR`
+        Bar = 2,
+        /// `ERR_WOULD_BLOCK`
+        WouldBlock = 11,
     }
     ");
 }
@@ -128,9 +136,12 @@ fn test_define_enum_sort_by_name() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Alpha = (ERR_ALPHA as u32),
-        Middle = (ERR_MIDDLE as u32),
-        Zulu = (ERR_ZULU as u32),
+        /// `ERR_ALPHA`
+        Alpha = 3,
+        /// `ERR_MIDDLE`
+        Middle = 2,
+        /// `ERR_ZULU`
+        Zulu = 1,
     }
     ");
 }
@@ -159,9 +170,12 @@ fn test_define_enum_sort_by_value_desc() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        High = (ERR_HIGH as u32),
-        Middle = (ERR_MIDDLE as u32),
-        Low = (ERR_LOW as u32),
+        /// `ERR_HIGH`
+        High = 3,
+        /// `ERR_MIDDLE`
+        Middle = 2,
+        /// `ERR_LOW`
+        Low = 1,
     }
     ");
 }

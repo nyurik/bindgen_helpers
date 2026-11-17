@@ -7,6 +7,17 @@ pub use regex::Regex;
 
 use crate::DefineEnum;
 
+/// Where [`Renamer`] reports the C items it has no rule for, when debug output is enabled.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum DebugOutput {
+    /// Print `cargo::warning=` lines to stdout, which Cargo shows as warnings of a `build.rs` script.
+    #[default]
+    CargoWarning,
+    /// Print `warning:` lines to stderr, e.g. from a program that writes the bindings to stdout.
+    Stderr,
+}
+
 /// Define the rules how a C identifier should be renamed.
 #[derive(Debug, Default, Clone)]
 pub struct IdentRenamer {
@@ -150,6 +161,8 @@ impl IdentRenamer {
 pub struct Renamer {
     /// Enable debug output
     debug: bool,
+    /// Where debug output goes
+    debug_output: DebugOutput,
     /// Rename C items like enums, structs, and aliases, replacing them with a new name.
     item_renames: HashMap<String, String>,
     /// Rename C items like enums, structs, and aliases that match a regex and apply a renamer.
@@ -173,6 +186,24 @@ impl Renamer {
         Self {
             debug,
             ..Default::default()
+        }
+    }
+
+    /// Set where debug output goes, if enabled with [`Renamer::new`].
+    pub fn set_debug_output(&mut self, output: DebugOutput) {
+        self.debug_output = output;
+    }
+
+    fn report_unrecognized(&self, what: std::fmt::Arguments<'_>) {
+        if self.debug {
+            match self.debug_output {
+                DebugOutput::CargoWarning => {
+                    println!("cargo::warning=Unrecognized {what}");
+                }
+                DebugOutput::Stderr => {
+                    eprintln!("warning: unrecognized {what}")
+                }
+            }
         }
     }
 
@@ -273,17 +304,19 @@ impl ParseCallbacks for Renamer {
         self.enum_renames
             .iter()
             .filter_map(|(re, rn)| match (enum_name, re) {
-                (Some(enum_name), Some(re)) if re.is_match(enum_name) => Some(rn),
+                (Some(enum_name), Some(re)) if re.is_match(enum_name) => {
+                    Some(rn)
+                }
                 (None, None) => Some(rn),
                 _ => None,
             })
             .map(|rn| rn.apply(value))
             .next()
             .or_else(|| {
-                if self.debug {
-                    let name = enum_name.unwrap_or_default();
-                    println!("cargo::warning=Unrecognized enum variant {name} :: {value}");
-                }
+                let name = enum_name.unwrap_or_default();
+                self.report_unrecognized(format_args!(
+                    "enum variant {name} :: {value}"
+                ));
                 None
             })
     }
@@ -307,9 +340,7 @@ impl ParseCallbacks for Renamer {
                     .next()
             })
             .or_else(|| {
-                if self.debug {
-                    println!("cargo::warning=Unrecognized item {item_name}");
-                }
+                self.report_unrecognized(format_args!("item {item_name}"));
                 None
             })
     }

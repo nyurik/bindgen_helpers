@@ -53,8 +53,10 @@ fn test_helpers_define_enum_write() {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Foo = (ERR_FOO as u32),
-        Bar = (ERR_BAR as u32),
+        /// `ERR_FOO`
+        Foo = 1,
+        /// `ERR_BAR`
+        Bar = 2,
     }
     ");
 }
@@ -153,7 +155,7 @@ enum my_enum {
     let output = helpers.into_string().expect("Failed to generate bindings");
     let _ = std::fs::remove_file(path);
 
-    assert_snapshot!(output, @r"
+    assert_snapshot!(output, @"
     pub const ERR_FOO: u32 = 1;
     pub const ERR_BAR: u32 = 2;
     #[repr(u32)]
@@ -166,8 +168,10 @@ enum my_enum {
     #[repr(u32)]
     #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
     pub enum ErrorCode {
-        Foo = (ERR_FOO as u32),
-        Bar = (ERR_BAR as u32),
+        /// `ERR_FOO`
+        Foo = 1,
+        /// `ERR_BAR`
+        Bar = 2,
     }
     ");
 }

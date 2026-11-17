@@ -3,7 +3,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use bindgen::{builder_from_flags, Builder};
-use bindgen_helpers::{BindingsBuilder, HelperConfig};
+use bindgen_helpers::{BindingsBuilder, DebugOutput, HelperConfig};
 
 const HELPER_CONFIG_FLAG: &str = "--helper-config";
 
@@ -40,7 +40,11 @@ fn run() -> Result<(), CliError> {
     )?;
 
     if let Some(helper_config) = helper_config {
-        BindingsBuilder::with_config(builder, &helper_config)?.write(output)?;
+        let mut helpers =
+            BindingsBuilder::with_config(builder, &helper_config)?;
+        // Without `-o`, the bindings go to stdout, so keep debug output out of it.
+        helpers.set_debug_output(DebugOutput::Stderr);
+        helpers.write(output)?;
     } else {
         eprintln!("warning: no {HELPER_CONFIG_FLAG} provided; running as plain bindgen");
         builder.generate()?.write(output)?;

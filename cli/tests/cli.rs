@@ -100,8 +100,54 @@ fn assert_helper_output(stdout: &str) {
     assert!(stdout.contains("Yes = 0"));
     assert!(stdout.contains("No = 1"));
     assert!(stdout.contains("pub enum ErrorCode"));
-    assert!(stdout.contains("Foo = (ERR_FOO as u32)"));
-    assert!(stdout.contains("Bar = (ERR_BAR as u32)"));
+    assert!(stdout.contains("Foo = 1,"));
+    assert!(stdout.contains("Bar = 2,"));
+}
+
+#[test]
+fn cli_define_enum_does_not_need_allowlisted_constants() {
+    let header = TempFile::new("allowlist.h", HELPER_HEADER);
+    let config = TempFile::new("allowlist.toml", HELPER_CONFIG);
+
+    let output = bindgen_helper()
+        .arg(header.path())
+        .arg("--disable-header-comment")
+        .arg("--allowlist-type")
+        .arg("my_enum")
+        .arg("--helper-config")
+        .arg(config.path())
+        .output()
+        .expect("failed to run bindgen-helper");
+
+    assert!(output.status.success(), "stderr: {}", stderr(&output));
+    let stdout = stdout(&output);
+    assert!(!stdout.contains("pub const ERR_FOO"), "{stdout}");
+    assert_helper_output(&stdout);
+}
+
+#[test]
+fn cli_writes_debug_output_to_stderr() {
+    let header = TempFile::new("debug.h", HELPER_HEADER);
+    let config =
+        TempFile::new("debug.toml", &format!("debug = true\n{HELPER_CONFIG}"));
+
+    let output = bindgen_helper()
+        .arg(header.path())
+        .arg("--disable-header-comment")
+        .arg("--helper-config")
+        .arg(config.path())
+        .output()
+        .expect("failed to run bindgen-helper");
+
+    assert!(output.status.success(), "stderr: {}", stderr(&output));
+    let stdout = stdout(&output);
+    assert!(!stdout.contains("warning"), "{stdout}");
+    assert_helper_output(&stdout);
+    assert!(
+        stderr(&output).contains("warning: unrecognized item ERR_FOO"),
+        "{}",
+        stderr(&output)
+    );
 }
 
 #[test]

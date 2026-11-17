@@ -50,7 +50,7 @@ enum my_enum {
 "#);
 
   // Wrap the builder with the helper to handle all additional functionality
-  // true to print debug info about the renames to stderr, false to be silent
+  // true to report the C items no rule matched as cargo warnings, false to be silent
   let mut helpers = BindingsBuilder::new(builder, true);
 
   // rename a single item, e.g. a struct, enum, or a typedef
@@ -112,8 +112,10 @@ pub const ERR_BAR: u32 = 2;
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub enum ErrorCode {
-  Foo = (ERR_FOO as u32),
-  Bar = (ERR_BAR as u32),
+  /// `ERR_FOO`
+  Foo = 1,
+  /// `ERR_BAR`
+  Bar = 2,
 }
 
 ```
@@ -149,6 +151,13 @@ pub enum MyEnum {
 -->
 
 See the list of all [case variants](https://docs.rs/convert_case/latest/convert_case/enum.Case.html) supported by the `convert_case` crate.
+
+## Features
+
+* `config` loads helper rules from a TOML file, see below. Off by default.
+* `logging`, `prettyplease`, and `runtime` turn on the bindgen features of the same names, and are on by default, as in
+  bindgen. To link libclang statically, turn off the default features and enable bindgen's `static` feature in your own
+  `bindgen` dependency, as `static` cannot be combined with `runtime`.
 
 ## Config files from `build.rs`
 
