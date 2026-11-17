@@ -6,12 +6,11 @@ just := quote(just_executable())
 # cargo-binstall needs a workaround due to caching when used in CI
 binstall_args := if env('CI', '') != '' {'--no-confirm --no-track --disable-telemetry'} else {''}
 
-# if running in CI, treat warnings as errors by setting RUSTFLAGS and RUSTDOCFLAGS to '-D warnings' unless they are already set
+# if running in CI, treat warnings as errors by setting CARGO_BUILD_WARNINGS to 'deny' unless it is already set
 # Use `CI=true just ci-test` to run the same tests as in GitHub CI.
-# Use `just env-info` to see the current values of RUSTFLAGS and RUSTDOCFLAGS
+# Use `just env-info` to see the current value of CARGO_BUILD_WARNINGS
 ci_mode := if env('CI', '') != '' {'1'} else {''}
-export RUSTFLAGS := env('RUSTFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
-export RUSTDOCFLAGS := env('RUSTDOCFLAGS', if ci_mode == '1' {'-D warnings'} else {''})
+export CARGO_BUILD_WARNINGS := env('CARGO_BUILD_WARNINGS', if ci_mode == '1' {'deny'} else {'warn'})
 export RUST_BACKTRACE := env('RUST_BACKTRACE', if ci_mode == '1' {'1'} else {'0'})
 # Cargo lock behavior - enabled in CI.
 locked := if env('CI', '') != '' {'--locked'} else {''}
@@ -114,8 +113,7 @@ env-info:
     rustc --version
     cargo --version
     rustup --version
-    @echo "RUSTFLAGS='$RUSTFLAGS'"
-    @echo "RUSTDOCFLAGS='$RUSTDOCFLAGS'"
+    @echo "CARGO_BUILD_WARNINGS='$CARGO_BUILD_WARNINGS'"
     @echo "RUST_BACKTRACE='$RUST_BACKTRACE'"
 
 # Reformat all code `cargo fmt`. If nightly is available, use it for better results
@@ -182,8 +180,8 @@ udeps:  (cargo-install 'cargo-udeps')
     cargo +nightly udeps --workspace --all-features --all-targets
 
 # Update all dependencies, including breaking changes. Requires nightly toolchain (install with `rustup install nightly`)
-update:
-    cargo +nightly -Z unstable-options update --breaking
+update:  (cargo-install 'cargo-upgrade' 'cargo-edit')
+    cargo upgrade --incompatible --compatible ignore
     cargo update
 
 # Ensure that a certain command is available
@@ -210,6 +208,7 @@ assert-git-is-clean:
 cargo-install $COMMAND $INSTALL_CMD='' *args='':
     #!/usr/bin/env bash
     set -euo pipefail
+    unset CARGO_BUILD_WARNINGS
     if ! command -v $COMMAND > /dev/null; then
         echo "$COMMAND could not be found. Installing..."
         if ! command -v cargo-binstall > /dev/null; then
@@ -218,7 +217,7 @@ cargo-install $COMMAND $INSTALL_CMD='' *args='':
             { set +x; } 2>/dev/null
         else
             set -x
-            cargo binstall ${INSTALL_CMD:-$COMMAND} {{binstall_args}} --locked {{args}}
+            cargo binstall ${INSTALL_CMD:-$COMMAND} {{binstall_args}} --locked
             { set +x; } 2>/dev/null
         fi
     fi

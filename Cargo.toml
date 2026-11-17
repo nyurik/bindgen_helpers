@@ -37,7 +37,7 @@ rust-version = "1.71"
 [workspace.dependencies]
 bindgen = ">=0.72.0"
 bindgen_helpers = { path = ".", version = "0.6.1" }
-convert_case = "0.11.0"
+convert_case = "0.12.0"
 insta = "1.43.1"
 regex = "1.12.3"
 serde = { version = "1.0.228", features = ["derive"] }
@@ -50,6 +50,7 @@ unused_qualifications = "warn"
 
 [workspace.lints.clippy]
 # Restrictions
+disallowed_methods = "forbid"
 panic_in_result_fn = "warn"
 todo = "warn"
 unwrap_used = "warn"
