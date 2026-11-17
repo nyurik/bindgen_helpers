@@ -6,6 +6,11 @@ use crate::{IdentRenamer, Regex};
 ///
 /// Bindgen still emits the matched constants as usual. The rendered enum uses those
 /// constants as discriminants, e.g. `Foo = (ERR_FOO as u32)`.
+///
+/// Rust rejects an enum whose variants share a discriminant (error E0081), so
+/// when several matching macros have the same value, e.g. aliases such as
+/// `ERR_AGAIN` and `ERR_WOULD_BLOCK`, keep only one of them with
+/// [`exclude`](Self::exclude).
 #[derive(Debug, Clone)]
 pub struct DefineEnum {
     enum_name: String,

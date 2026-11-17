@@ -179,7 +179,7 @@ Use normal bindgen `Builder` methods for bindgen behavior such as headers, allow
 
 ## CLI usage
 
-The separate `bindgen_helpers_cli` package provides a `bindgen-helper` executable. It accepts the same arguments as the upstream `bindgen` CLI and adds one helper-specific option:
+The separate `bindgen_helpers_cli` package provides a `bindgen-helper` executable. Install it with [cargo-binstall](https://github.com/cargo-bins/cargo-binstall):
 
 ```sh
 cargo binstall bindgen_helpers_cli
@@ -191,6 +191,8 @@ Or build it from source with Cargo:
 cargo install bindgen_helpers_cli
 ```
 
+It accepts the same arguments as the upstream `bindgen` CLI and adds one helper-specific option, `--helper-config <PATH>` (or `--helper-config=<PATH>`), which may be given once. Arguments after `--` are passed to clang untouched. Note that `bindgen-helper --help` only lists the upstream `bindgen` options.
+
 ```sh
 bindgen-helper wrapper.h \
   -o src/bindings.rs \
@@ -200,7 +202,7 @@ bindgen-helper wrapper.h \
   -- -Iinclude -DFOO=1
 ```
 
-If `--helper-config` is omitted, `bindgen-helper` behaves like plain `bindgen`. Bindgen itself does not have a general config file for its own options, so continue to use normal bindgen CLI flags for headers, output, allowlists, blocklists, clang args, layout tests, and other bindgen behavior. The same helper TOML file works with both `BindingsBuilder::with_config_file` in `build.rs` and `bindgen-helper --helper-config`.
+If `--helper-config` is omitted, `bindgen-helper` behaves like plain `bindgen`. Bindgen itself does not have a general config file for its own options, so continue to use normal bindgen CLI flags for headers, output, allowlists, blocklists, clang args, layout tests, and other bindgen behavior. The same helper TOML file works with both `BindingsBuilder::with_config_file` in `build.rs` and `bindgen-helper --helper-config`. The config is validated before bindgen opens the `-o` file, so an invalid config leaves existing bindings untouched. Unknown keys are errors.
 
 CLI generation is useful when you check generated bindings into the repository or refresh them in CI. A `build.rs` script remains a better fit when bindings need to be generated as part of target-specific Cargo builds.
 

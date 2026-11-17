@@ -187,8 +187,14 @@ impl HelperConfig {
 
     /// Apply this config to an existing helper builder.
     ///
+    /// Rules are applied in the order they appear in the config. The
+    /// [`debug`](Self::debug) flag is not applied here: it is a property of the
+    /// builder, set by [`BindingsBuilder::new`] or [`BindingsBuilder::with_config`].
+    ///
     /// # Errors
-    /// Returns an error if any regex, case, or sort setting is invalid.
+    /// Returns an error if any regex, case, or sort setting is invalid. Rules
+    /// listed before the invalid one have already been added to `helpers`, so
+    /// discard the builder on error.
     pub fn apply_to(
         &self,
         helpers: &mut BindingsBuilder,

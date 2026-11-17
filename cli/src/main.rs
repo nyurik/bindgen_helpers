@@ -2,14 +2,14 @@ use std::env;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use bindgen::builder_from_flags;
-use bindgen_helpers::BindingsBuilder;
+use bindgen::{builder_from_flags, Builder};
+use bindgen_helpers::{BindingsBuilder, HelperConfig};
 
 const HELPER_CONFIG_FLAG: &str = "--helper-config";
 
 fn main() {
     if let Err(err) = run() {
-        eprintln!("{err}");
+        eprintln!("error: {err}");
         std::process::exit(1);
     }
 }
@@ -20,6 +20,17 @@ fn run() -> Result<(), CliError> {
         helper_config,
     } = extract_helper_config(env::args_os())?;
 
+    // Load and validate the helper config before bindgen's argument parsing,
+    // which creates and truncates the `-o` output file: an invalid config must
+    // not wipe out existing bindings.
+    let helper_config = helper_config
+        .map(|path| {
+            let config = HelperConfig::from_path(path)?;
+            BindingsBuilder::with_config(Builder::default(), &config)?;
+            Ok::<_, CliError>(config)
+        })
+        .transpose()?;
+
     let (builder, output, _verbose) = builder_from_flags(
         bindgen_args
             .into_iter()
@@ -29,8 +40,7 @@ fn run() -> Result<(), CliError> {
     )?;
 
     if let Some(helper_config) = helper_config {
-        BindingsBuilder::with_config_file(builder, helper_config)?
-            .write(output)?;
+        BindingsBuilder::with_config(builder, &helper_config)?.write(output)?;
     } else {
         eprintln!("warning: no {HELPER_CONFIG_FLAG} provided; running as plain bindgen");
         builder.generate()?.write(output)?;
