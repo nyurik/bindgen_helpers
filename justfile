@@ -40,9 +40,8 @@ ci-coverage: env-info && \
 # Run all checks locally. Cargo.lock may be created or updated.
 local-test: env-info test-fmt clippy check test test-doc
 
-# Run all tests as expected by CI, with the newest dependency versions. Cargo.lock is created if missing.
+# Run all tests as expected by CI, using the committed Cargo.lock.
 ci-test:
-    @if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
     {{just}} local-test
     {{just}} assert-git-is-clean
 
@@ -95,7 +94,6 @@ _save-msrv-lock:
 # Clean all build artifacts
 clean:
     cargo clean
-    rm -f Cargo.lock
 
 # Run cargo clippy to lint the code
 clippy *args:
@@ -148,15 +146,22 @@ get-msrv package=main_crate:  (get-crate-field 'rust_version' package)
 msrv:  (cargo-install 'cargo-msrv')
     cargo msrv find --write-msrv -- {{just}} ci-test-msrv
 
-# Initialize Cargo.lock file with minimal versions of dependencies.
+# Initialize Cargo.msrv.lock with the minimal versions of dependencies.
+# Cargo.lock is set aside and restored afterwards. Run `just msrv-check` afterwards to add the dev-dependencies.
 msrv-init:  (cargo-install 'cargo-minimal-versions')
-    rm -f Cargo.msrv.lock Cargo.lock
-    @if ! cargo minimal-versions check --workspace ; then \
-        echo "ERROR: Could not generate minimal Cargo.msrv.lock" ;\
-        echo "       fix the lock file with 'cargo update ... --precise ...'" ;\
-        echo "       make sure it passes 'just check' " ;\
-        echo "       once done, rename Cargo.lock to Cargo.msrv.lock" ;\
-        exit 1 ;\
+    #!/usr/bin/env bash
+    set -euo pipefail
+    backup="$(mktemp Cargo.lock.bak.XXXXXX)"
+    mv Cargo.lock "$backup"
+    trap 'mv "$backup" Cargo.lock' EXIT
+    rm -f Cargo.msrv.lock
+    if ! cargo minimal-versions check --workspace ; then
+        echo "ERROR: Could not generate minimal Cargo.msrv.lock"
+        echo "       fix it with 'cargo update ... --precise ...' until 'just check' passes,"
+        echo "       then rename Cargo.lock to Cargo.msrv.lock"
+        trap - EXIT
+        echo "       The original Cargo.lock is in $backup"
+        exit 1
     fi
     mv Cargo.lock Cargo.msrv.lock
 

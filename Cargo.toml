@@ -44,7 +44,7 @@ rust-version = "1.71"
 
 [workspace.dependencies]
 # The library accepts wide ranges of its dependencies. `Cargo.msrv.lock` holds the minimal versions,
-# which `just ci-test-msrv` compiles with the MSRV toolchain; `just ci-test` uses the newest ones.
+# which `just ci-test-msrv` compiles with the MSRV toolchain. `just ci-test` uses `Cargo.lock`, which the CLI ships with.
 bindgen = ">=0.72.0"  # 0.72 is the first with the current `ParseCallbacks::item_name` signature
 bindgen_helpers = { path = ".", version = "0.6.1" }
 convert_case = ">=0.8.0, <0.13"  # 0.8 is the first with `Case<'a>`
