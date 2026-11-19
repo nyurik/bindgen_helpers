@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2](https://github.com/nyurik/bindgen_helpers/compare/v0.6.1...v0.6.2) - 2026-11-19
+
+### Added
+
+- bindgen-helper as a CLI tool ([#42](https://github.com/nyurik/bindgen_helpers/pull/42))
+- generate enums from C #define constants ([#38](https://github.com/nyurik/bindgen_helpers/pull/38))
+
+### Fixed
+
+- *(deps)* bound bindgen to <0.74 ([#50](https://github.com/nyurik/bindgen_helpers/pull/50))
+
+### Other
+
+- let release PRs pass the MSRV check ([#52](https://github.com/nyurik/bindgen_helpers/pull/52))
+- release the CLI with the library, with binaries for six targets ([#51](https://github.com/nyurik/bindgen_helpers/pull/51))
+- codecov project status off; justfile update uses cargo-upgrade ([#49](https://github.com/nyurik/bindgen_helpers/pull/49))
+- [pre-commit.ci] pre-commit autoupdate ([#47](https://github.com/nyurik/bindgen_helpers/pull/47))
+- fix justfile cargo binstall
+- let rust fmt indent .rs files
+- disallow mem leaking in code
+- ignore CARGO_BUILD_WARNINGS in cargo-install
+- use Rust 1.97 cargo warnings
+- update .gitignore
+- *(deps)* bump the all-actions-version-updates group across 1 directory with 2 updates ([#45](https://github.com/nyurik/bindgen_helpers/pull/45))
+- update dependencies ([#43](https://github.com/nyurik/bindgen_helpers/pull/43))
+- add descending value sort option ([#39](https://github.com/nyurik/bindgen_helpers/pull/39))
+- add download counter to readme
+- set release-plz CI ([#22](https://github.com/nyurik/bindgen_helpers/pull/22))
+- validate if published in CI ([#21](https://github.com/nyurik/bindgen_helpers/pull/21))
+- More rework of CI and justfiles ([#18](https://github.com/nyurik/bindgen_helpers/pull/18))
+- coverage, updates ([#11](https://github.com/nyurik/bindgen_helpers/pull/11))
+- Upgrade deps, use `Case<'static>`, lints ([#10](https://github.com/nyurik/bindgen_helpers/pull/10))
+- Minor updates ([#7](https://github.com/nyurik/bindgen_helpers/pull/7))
+- lints
+- Reexport bindgen api to avoid conflicts ([#5](https://github.com/nyurik/bindgen_helpers/pull/5))
+- regexset removals ([#3](https://github.com/nyurik/bindgen_helpers/pull/3))
+- Update README.md
+- Update README.md
+- shields
+- readme
+- init
+
 ## [0.6.1](https://github.com/nyurik/bindgen_helpers/compare/v0.6.0...v0.6.1) - 2026-05-01
 
 ### Other

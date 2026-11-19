@@ -41,7 +41,7 @@ members = [".", "cli", "tests"]
 default-members = [".", "cli", "tests"]
 
 [workspace.package]
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Yuri Astrakhan <YuriAstrakhan@gmail.com>"]
 repository = "https://github.com/nyurik/bindgen_helpers"
 edition = "2021"
@@ -54,7 +54,7 @@ rust-version = "1.71"
 # 0.72 is the first with the current `ParseCallbacks::item_name` signature. The upper bound is the newest bindgen
 # verified to work, so a breaking release can't reach users through `cargo update`; raise it after checking one.
 bindgen = { version = ">=0.72.0, <0.74", default-features = false }
-bindgen_helpers = { path = ".", version = "0.6.1" }
+bindgen_helpers = { path = ".", version = "0.6.2" }
 convert_case = ">=0.8.0, <0.13"  # 0.8 is the first with `Case<'a>`
 insta = "1.43.1"
 regex = "1.5.6"
