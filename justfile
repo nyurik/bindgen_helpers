@@ -78,14 +78,33 @@ _use_msrv *args:
         mv Cargo.lock "$backup"
     fi
     cp Cargo.msrv.lock Cargo.lock
+    {{just}} _sync-lock-versions Cargo.lock
     "${command[@]}"
 
-# Check that Cargo.msrv.lock is identical to Cargo.lock, and fail if not.
+# Set the versions of the workspace's own crates in `lockfile` to those in their Cargo.toml. A release PR bumps them in
+# Cargo.toml and Cargo.lock but not in Cargo.msrv.lock, which `--locked` would then reject.
+_sync-lock-versions lockfile:  (assert-cmd 'jq')
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSIONS="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | "\(.name) \(.version)"')" \
+        awk 'BEGIN { n = split(ENVIRON["VERSIONS"], lines, "\n"); for (i = 1; i <= n; i++) { split(lines[i], kv, " "); ver[kv[1]] = kv[2] } }
+            /^name = / { name = $3; gsub(/"/, "", name); member = (name in ver) }
+            /^version = / && member { $0 = "version = \"" ver[name] "\""; member = 0 }
+            { print }' {{quote(lockfile)}} > {{quote(lockfile + '.tmp')}}
+    mv {{quote(lockfile + '.tmp')}} {{quote(lockfile)}}
+
+# Check that Cargo.msrv.lock is identical to Cargo.lock, apart from the workspace crates' own versions, and fail if not.
 _assert-msrv-lock:
-    @if ! cmp -s Cargo.lock Cargo.msrv.lock; then \
-        >&2 echo 'ERROR: Cargo.msrv.lock is not up to date. Run `just msrv-check` locally.' ;\
-        diff -u Cargo.msrv.lock Cargo.lock || true ;\
-        exit 1 ;\
+    #!/usr/bin/env bash
+    set -euo pipefail
+    expected="$(mktemp Cargo.msrv.lock.XXXXXX)"
+    trap 'rm -f "$expected"' EXIT
+    cp Cargo.msrv.lock "$expected"
+    {{just}} _sync-lock-versions "$expected"
+    if ! cmp -s Cargo.lock "$expected"; then
+        >&2 echo 'ERROR: Cargo.msrv.lock is not up to date. Run `just msrv-check` locally.'
+        diff -u "$expected" Cargo.lock || true
+        exit 1
     fi
 
 # Copy Cargo.lock to Cargo.msrv.lock if they differ. This is used to save changes to the lockfile caused by MSRV check.
@@ -150,7 +169,7 @@ fmt-toml *args:  (cargo-install 'cargo-sort')
 
 # Get a package field from the metadata
 get-crate-field field package=main_crate:  (assert-cmd 'jq')
-    cargo metadata --format-version 1 | jq -e -r '.packages | map(select(.name == "{{package}}")) | first | .{{field}} // error("Field \"{{field}}\" is missing in Cargo.toml for package {{package}}")'
+    cargo metadata --no-deps --format-version 1 | jq -e -r '.packages | map(select(.name == "{{package}}")) | first | .{{field}} // error("Field \"{{field}}\" is missing in Cargo.toml for package {{package}}")'
 
 # Get the minimum supported Rust version (MSRV) for the crate
 get-msrv package=main_crate:  (get-crate-field 'rust_version' package)
