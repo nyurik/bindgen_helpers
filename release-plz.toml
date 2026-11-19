@@ -1,5 +1,9 @@
 [workspace]
 dependencies_update = true
+# Publish only when merging a release PR. Otherwise every push to main tries to publish any crate missing from
+# crates.io, e.g. a new bindgen_helpers_cli that needs features of the unreleased library, and that failure also
+# skips the `release-pr` step.
+release_always = false
 git_release_name = "v{{ version }}"
 git_tag_name = "v{{ version }}"
 # The library and the CLI share one version, so only the library makes the `vX.Y.Z` tag and GitHub release.

@@ -108,13 +108,14 @@ coverage *args='--open':  (cargo-install 'cargo-llvm-cov')
     cargo llvm-cov clean --workspace
     cargo llvm-cov --workspace --all-features --all-targets --include-build-script {{args}}
 
-# Build the CLI's release binary for `target`, and pack it as the release asset in `target/dist`
+# Build the CLI's release binary for `target`, and pack it as the release asset in `target/dist`.
+# The binary is `bindgen-helper.exe` on Windows; every target's archive is a `.tar.gz`, as binstall expects.
 dist target:
     rustup target add {{quote(target)}}
     cargo build --release --locked --package bindgen_helpers_cli --bin bindgen-helper --target {{quote(target)}}
     rm -rf {{quote(dist_dir / 'bindgen-helper-' + target)}}* && mkdir -p {{quote(dist_dir / 'bindgen-helper-' + target)}}
-    cp {{quote('target' / target / 'release/bindgen-helper')}} LICENSE-MIT LICENSE-APACHE {{quote(dist_dir / 'bindgen-helper-' + target)}}/
-    cd {{quote(dist_dir / 'bindgen-helper-' + target)}} && tar acf {{quote('../bindgen-helper-' + target + '.tar.gz')}} bindgen-helper LICENSE-MIT LICENSE-APACHE
+    cp {{quote('target' / target / 'release/bindgen-helper' + if target =~ 'windows' { '.exe' } else { '' })}} LICENSE-MIT LICENSE-APACHE {{quote(dist_dir / 'bindgen-helper-' + target)}}/
+    cd {{quote(dist_dir / 'bindgen-helper-' + target)}} && tar czf {{quote('../bindgen-helper-' + target + '.tar.gz')}} {{quote('bindgen-helper' + if target =~ 'windows' { '.exe' } else { '' })}} LICENSE-MIT LICENSE-APACHE
 
 # Build and open code documentation
 docs *args='--open':

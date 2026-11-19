@@ -69,13 +69,21 @@ jobs:
   # Run by hand with cli_tag, it builds that tag.
   build-binaries:
     name: Build ${{ matrix.target }}
-    # The oldest supported runner, so that the binary needs an older glibc. Not musl: a static musl binary cannot load
-    # libclang at runtime.
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target: [ x86_64-unknown-linux-gnu ]
+        include:
+          # Linux on the oldest supported runners, so that the binary needs an older glibc. Not musl: a static musl
+          # binary cannot load libclang at runtime.
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm }
+          - { target: aarch64-apple-darwin, os: macos-latest }
+          # Cross-compiled: Apple's toolchain builds both architectures on Apple silicon
+          - { target: x86_64-apple-darwin, os: macos-latest }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          # Cross-compiled with the runner's MSVC ARM64 tools
+          - { target: aarch64-pc-windows-msvc, os: windows-latest }
     steps:
       - uses: actions/checkout@v7
         with:
