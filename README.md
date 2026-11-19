@@ -21,7 +21,7 @@ For new code, `BindingsBuilder` wraps an already configured bindgen `Builder`, i
 [build-dependencies]
 # Bindgen_helpers re-exports all of bindgen's public API at the root level
 # Do not use bindgen directly to avoid some version conflicts
-bindgen_helpers = "0.3"
+bindgen_helpers = "..."
 ```
 
 ```rust
