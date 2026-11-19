@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3](https://github.com/nyurik/bindgen_helpers/compare/v0.6.2...v0.6.3) - 2026-11-19
+
+### Other
+
+- Update README.md
+- limit job run time with timeout-minutes ([#53](https://github.com/nyurik/bindgen_helpers/pull/53))
+
 ## [0.6.2](https://github.com/nyurik/bindgen_helpers/compare/v0.6.1...v0.6.2) - 2026-11-19
 
 ### Added
